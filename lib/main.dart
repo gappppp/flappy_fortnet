@@ -1,6 +1,7 @@
 import 'package:flappy_fortnet/model/likes.dart';
 import 'package:flappy_fortnet/model/posts.dart';
 import 'package:flappy_fortnet/model/utenti.dart';
+import 'package:flappy_fortnet/view/create_screen.dart';
 import 'package:flappy_fortnet/view/dummy_screen.dart';
 import 'package:flappy_fortnet/view/simple_menu_screen.dart';
 import 'package:flappy_fortnet/view/read_screen.dart';
@@ -46,7 +47,7 @@ class MyApp extends StatelessWidget {
               })
           ),
             '/users/read': (context) => const ReadScreen<Utente>(),
-            '/users/create': (context) => const DummyScreen(),//todo
+            '/users/create': (context) => const CreateScreen<Utente>(),//todo
             '/users/update': (context) => const DummyScreen(),//todo
             '/users/delete': (context) => const DummyScreen(),//todo
 

@@ -182,19 +182,19 @@ class _ReadScreenState<T extends DeserJson> extends State<ReadScreen<T>> {
                     elevation: 2,
                   ),
                   onPressed: () async {
-                  List<T> newList = await Fortservice().getT(//get specified T
-                    Map.from(<String, String>{ filters[0]: element.toJson()[filters[0]].toString() })
-                  );
-                  
-                  //todo: show specific of T
+                    List<T> newList = await Fortservice().getT(//get specified T
+                      Map.from(<String, String>{ filters[0]: element.toJson()[filters[0]].toString() })
+                    );
+                    
+                    //todo: show specific of T
 
 
-                  // trigger reload
-                  setState(() {
-                    list = newList;
-                    savedFilters.clear();
-                  });
-                },
+                    // trigger (fortnite) reload
+                    setState(() {
+                      list = newList;
+                      savedFilters.clear();
+                    });
+                  },
                   child: listTileOf<T>(list![index]),
                 )
               );

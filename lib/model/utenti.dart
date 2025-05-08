@@ -20,6 +20,14 @@ class Utente implements DeserJson<Utente> {
   static List<String> getFields() {
     return ["id", "username", "password"];
   }
+
+  static Map<String, String> getFieldsAndDataType() {
+    return {
+      "id": "int",
+      "username": "String",
+      "password": "String",
+    };
+  } 
   
   @override
   Map<String, dynamic> toJson() => <String, dynamic>{

@@ -4,7 +4,7 @@
     const DB_USERNAME = "root";
     const DB_PASSWORD = "";
     const DB_DATABASE = "fortnet";
-    const ALLOWED_METHODS = ["GET", "POST", "PUT", "DELETE"];//TODO expand PATCH method
+    const ALLOWED_METHODS = ["GET", "POST", "PUT", "DELETE", "PATCH"];
 
     // SQL SCHEMA ---------------------------------------------
     /*
@@ -1217,10 +1217,8 @@
             else if($res == "ERROR") $statuscode = 500; // general server error
             else $statuscode = 200; // operation executed successfuly
         }
-
     } catch (mysqli_sql_exception $mse) {
         $statuscode = 500;
-        echo "<p>ERROR REPORT: ".$mse."</p>";// TEMP DEBUG
     }
 
     http_response_code($statuscode); // return status code of the response
