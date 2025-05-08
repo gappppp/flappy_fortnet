@@ -10,12 +10,8 @@ class Post implements DeserJson<Post> {
   int id;
   String title;
   String body;
-  
-  Post({
-    required this.id,
-    required this.title,
-    required this.body
-  });
+
+  Post({required this.id, required this.title, required this.body});
 
   static List<String> getFields() {
     return ["id", "title", "body"];
@@ -23,12 +19,17 @@ class Post implements DeserJson<Post> {
 
   @override
   Map<String, dynamic> toJson() => <String, dynamic>{
-    'id': id,
-    'title': title,
-    'body': body,
-  };
+        'id': id,
+        'title': title,
+        'body': body,
+      };
 
-    factory Post.fromJson(Map<String, dynamic> json) =>
+  @override
+  String getPrelude() {
+    return "$id#$title";
+  }
+
+  factory Post.fromJson(Map<String, dynamic> json) =>
       _$PostFromJson(json); //'_' = metodo privato
 
   // Map<String, dynamic> toJson() => _$PostToJson(this);

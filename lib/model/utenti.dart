@@ -11,11 +11,7 @@ class Utente implements DeserJson<Utente> {
   String username;
   String password;
 
-  Utente ({
-    required this.id,
-    required this.username,
-    required this.password
-  });
+  Utente({required this.id, required this.username, required this.password});
 
   static List<String> getFields() {
     return ["id", "username", "password"];
@@ -31,12 +27,17 @@ class Utente implements DeserJson<Utente> {
   
   @override
   Map<String, dynamic> toJson() => <String, dynamic>{
-    'id': id,
-    'username': username,
-    'password': password,
-  };
+        'id': id,
+        'username': username,
+        'password': password,
+      };
 
-    factory Utente.fromJson(Map<String, dynamic> json) =>
+  @override
+  String getPrelude() {
+    return "$id#$username";
+  }
+
+  factory Utente.fromJson(Map<String, dynamic> json) =>
       _$UtenteFromJson(json); //'_' = metodo privato
 
   // Map<String, dynamic> toJson() => _$UtenteToJson(this);

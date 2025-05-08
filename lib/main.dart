@@ -24,7 +24,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       debugShowCheckedModeBanner: false,
-      
+
       // initialRoute: '/',
       routes: {
         '/': (context) => SimpleMenuScreen(
@@ -51,35 +51,33 @@ class MyApp extends StatelessWidget {
             '/users/update': (context) => const DummyScreen(),//todo
             '/users/delete': (context) => const DummyScreen(),//todo
 
-          '/posts': (context) => SimpleMenuScreen(
-              title: "Posts",
-              menuDesc: "Scegli un opzione",
-              options: Map.from(<String, String>{
-                "read": "Visualizza i posts",
-                "create": "Aggiungi un post",
-                "update": "Modifica un post",
-                "delete": "Elimina un post"
-              })
-          ),
-            '/posts/read': (context) => const ReadScreen<Post>(),//todo
-            '/posts/create': (context) => const DummyScreen(),//todo
-            '/posts/update': (context) => const DummyScreen(),//todo
-            '/posts/delete': (context) => const DummyScreen(),//todo
+        '/posts': (context) => SimpleMenuScreen(
+            title: "Posts",
+            menuDesc: "Scegli un opzione",
+            options: Map.from(<String, String>{
+              "read": "Visualizza i posts",
+              "create": "Aggiungi un post",
+              "update": "Modifica un post",
+              "delete": "Elimina un post"
+            })),
+        '/posts/read': (context) => const ReadScreen<Post>(), //todo
+        '/posts/create': (context) => const DummyScreen(), //todo
+        '/posts/update': (context) => const DummyScreen(), //todo
+        '/posts/delete': (context) => const DummyScreen(), //todo
 
-          '/likes': (context) => SimpleMenuScreen(
-              title: "Likes",
-              menuDesc: "Scegli un opzione",
-              options: Map.from(<String, String>{
-                "read": "Visualizza i likes",
-                "create": "Aggiungi un like",
-                "update": "Modifica un like",
-                "delete": "Elimina un like"
-              })
-          ),
-            '/likes/read': (context) => const ReadScreen<Like>(),//todo
-            '/likes/create': (context) => const DummyScreen(),//todo
-            '/likes/update': (context) => const DummyScreen(),//todo
-            '/likes/delete': (context) => const DummyScreen(),//todo
+        '/likes': (context) => SimpleMenuScreen(
+            title: "Likes",
+            menuDesc: "Scegli un opzione",
+            options: Map.from(<String, String>{
+              "read": "Visualizza i likes",
+              "create": "Aggiungi un like",
+              "update": "Modifica un like",
+              "delete": "Elimina un like"
+            })),
+        '/likes/read': (context) => const ReadScreen<Like>(), //todo
+        '/likes/create': (context) => const DummyScreen(), //todo
+        '/likes/update': (context) => const DummyScreen(), //todo
+        '/likes/delete': (context) => const DummyScreen(), //todo
       },
     );
   }
