@@ -76,15 +76,17 @@ class _ReadScreenState<T extends DeserJson> extends State<ReadScreen<T>> {
   }
 
   Widget buildSummary() {
-    final String savedFilters_str = (savedFilters.isEmpty)
+    final String savedFiltersString = (savedFilters.isEmpty)
         ? "Nessun filtro impostato"
         : "filtri applicati: ${savedFilters.toString()}";
 
-    return Column(
+    return Container(
+      padding: const EdgeInsets.all(8),
+      child: Column(
       children: [
         const Row(
           children: [
-            const Text("Scegli che filtro applicare:"),
+            Text("Scegli che filtro applicare:"),
           ],
         ),
 
@@ -177,7 +179,7 @@ class _ReadScreenState<T extends DeserJson> extends State<ReadScreen<T>> {
 
         Row(
           children: [
-            Text(savedFilters_str),
+            Text(savedFiltersString),
           ],
         ),
 
@@ -225,21 +227,25 @@ class _ReadScreenState<T extends DeserJson> extends State<ReadScreen<T>> {
                 ? Text("Nessun $T registrato nel DataBase!")
                 : Text("Nessun $T trovato con questi criteri di ricerca!"))
       ],
-    );
+    ));
   }
 
   Widget buildDetailed() {
+    final String savedFiltersString = (savedFilters.isEmpty)
+        ? "Nessun filtro impostato"
+        : "filtri applicati: ${savedFilters.toString()}";
+
     final jsonObj = list![0].toJson();
 
-    return Column(
+    return Container(
+      padding: const EdgeInsets.all(8),
+      child: Column(
       children: [
-        for (var i = 0; i < jsonObj.length; i++) {
-          // stampa foreach <div>key: value</div><br> 
-        }
+        // for (var i = 0; i < jsonObj.length; i++) {
+        //   // stampa foreach <div>key: value</div><br> 
+        // }
           Row(
             children: [
-              const SizedBox(width: 8),
-
               //TEXTFIELD
               Expanded(
                 child: TextField(
@@ -298,7 +304,7 @@ class _ReadScreenState<T extends DeserJson> extends State<ReadScreen<T>> {
 
         Row(
           children: [
-            Text(savedFilters_str),
+            Text(savedFiltersString),
           ],
         ),
 
@@ -346,7 +352,7 @@ class _ReadScreenState<T extends DeserJson> extends State<ReadScreen<T>> {
                 ? Text("Nessun $T registrato nel DataBase!")
                 : Text("Nessun $T trovato con questi criteri di ricerca!"))
       ],
-    );
+    ));
   }
 }
 

@@ -34,6 +34,7 @@ dependencies:
   http: 1.1.0 # 1.1.0 is for 3.0  =  OK
   json_annotation: 4.9.0 # 4.9.0 is for 3.0  =  OK
   go_router: 13.1.0 # 13.1.0 is for 3.0  =  OK
+  xml: 6.4.2 # 6.4.2 is for 3.0  =  OK
 
 dependency_overrides:
   logging: 1.2.0 # 1.2.0 is for 2.19  =  OK

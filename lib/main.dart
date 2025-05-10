@@ -2,10 +2,13 @@ import 'package:flappy_fortnet/model/likes.dart';
 import 'package:flappy_fortnet/model/posts.dart';
 import 'package:flappy_fortnet/model/utenti.dart';
 import 'package:flappy_fortnet/view/create_screen.dart';
-import 'package:flappy_fortnet/view/dummy_screen.dart';
+import 'package:flappy_fortnet/view/delete_screen.dart';
 import 'package:flappy_fortnet/view/simple_menu_screen.dart';
 import 'package:flappy_fortnet/view/read_screen.dart';
+import 'package:flappy_fortnet/view/update_screen.dart';
 import 'package:flutter/material.dart';
+
+var prefferedLanguage = "json";
 
 void main() {
   runApp(const MyApp());
@@ -47,9 +50,9 @@ class MyApp extends StatelessWidget {
               })
           ),
             '/users/read': (context) => const ReadScreen<Utente>(),
-            '/users/create': (context) => const CreateScreen<Utente>(),//todo
-            '/users/update': (context) => const DummyScreen(),//todo
-            '/users/delete': (context) => const DummyScreen(),//todo
+            '/users/create': (context) => const CreateScreen<Utente>(),
+            '/users/update': (context) => const UpdateScreen<Utente>(),
+            '/users/delete': (context) => const DeleteScreen<Utente>(),
 
         '/posts': (context) => SimpleMenuScreen(
             title: "Posts",
@@ -60,10 +63,10 @@ class MyApp extends StatelessWidget {
               "update": "Modifica un post",
               "delete": "Elimina un post"
             })),
-        '/posts/read': (context) => const ReadScreen<Post>(), //todo
-        '/posts/create': (context) => const DummyScreen(), //todo
-        '/posts/update': (context) => const DummyScreen(), //todo
-        '/posts/delete': (context) => const DummyScreen(), //todo
+        '/posts/read': (context) => const ReadScreen<Post>(), 
+        '/posts/create': (context) => const CreateScreen<Post>(), 
+        '/posts/update': (context) => const UpdateScreen<Post>(), 
+        '/posts/delete': (context) => const DeleteScreen<Post>(), 
 
         '/likes': (context) => SimpleMenuScreen(
             title: "Likes",
@@ -71,13 +74,11 @@ class MyApp extends StatelessWidget {
             options: Map.from(<String, String>{
               "read": "Visualizza i likes",
               "create": "Aggiungi un like",
-              "update": "Modifica un like",
               "delete": "Elimina un like"
             })),
-        '/likes/read': (context) => const ReadScreen<Like>(), //todo
-        '/likes/create': (context) => const DummyScreen(), //todo
-        '/likes/update': (context) => const DummyScreen(), //todo
-        '/likes/delete': (context) => const DummyScreen(), //todo
+        '/likes/read': (context) => const ReadScreen<Like>(), 
+        '/likes/create': (context) => const CreateScreen<Like>(),
+        '/likes/delete': (context) => const DeleteScreen<Like>(), 
       },
     );
   }

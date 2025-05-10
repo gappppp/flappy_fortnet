@@ -2,6 +2,7 @@
 
 import 'package:flappy_fortnet/model/deser_json.dart';
 import 'package:json_annotation/json_annotation.dart';
+import 'package:xml/xml.dart';
 
 part 'posts.g.dart';
 
@@ -33,4 +34,6 @@ class Post implements DeserJson<Post> {
       _$PostFromJson(json); //'_' = metodo privato
 
   // Map<String, dynamic> toJson() => _$PostToJson(this);
+  factory Post.fromXml(XmlElement xml) =>
+      Post(id: int.parse(xml.getAttribute('id')!), title: xml.getElement('title')!.value!, body: xml.getElement('body')!.value!);
 }

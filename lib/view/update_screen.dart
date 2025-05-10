@@ -1,25 +1,21 @@
-import 'package:flappy_fortnet/model/deser_json.dart';
-import 'package:flappy_fortnet/model/likes.dart';
-import 'package:flappy_fortnet/model/posts.dart';
-import 'package:flutter/material.dart';
 import 'package:flappy_fortnet/controller/fortservice.dart';
+import 'package:flappy_fortnet/model/deser_json.dart';
+import 'package:flappy_fortnet/model/posts.dart';
 import 'package:flappy_fortnet/model/utenti.dart';
+import 'package:flutter/material.dart';
 
-class CreateScreen<T extends DeserJson> extends StatefulWidget {
-  const CreateScreen({super.key});
+class UpdateScreen<T extends DeserJson> extends StatefulWidget {
+  const UpdateScreen({super.key});
 
   @override
-  _CreateScreenState<T> createState() => _CreateScreenState<T>();
+  _UpdateScreenState<T> createState() => _UpdateScreenState<T>();
 }
 
-class _CreateScreenState<T extends DeserJson> extends State<CreateScreen<T>> {
-  String title = "Crea $T";
+class _UpdateScreenState<T extends DeserJson> extends State<UpdateScreen<T>> {
+  String title = "Aggiorna $T";
 
   List<String> fields = [];
   List<TextEditingController> controllers = [];
-  List<String> idsRelationship = [];
-  List<int> firstIds = [];
-  List<int> secondIds = [];
 
   bool isLoaded = false;
 
@@ -30,26 +26,14 @@ class _CreateScreenState<T extends DeserJson> extends State<CreateScreen<T>> {
   }
 
   Future<void> loadT() async {
-    if(T == Utente) {
-      title = "Crea Utente";
+    if (T == Utente) {
+      title = "Aggiorna Utente";
       fields = Utente.getFields();
-      fields.removeAt(0);
-      controllers = List.generate(fields.length, (_) => TextEditingController());
+      controllers = List.generate(fields.length, (index) => TextEditingController());
     } else if (T == Post) {
-      title = "Crea Post";
+      title = "Aggiorna Post";
       fields = Post.getFields();
-      fields.removeAt(0);
-      fields.forEach(print);
-      controllers = List.generate(fields.length, (_) => TextEditingController());
-    } else if (T == Like) {
-      title = "Crea Like";
-      try {
-        firstIds = await Fortservice().getUsersIds();
-        secondIds = await Fortservice().getPostsIds();
-      } catch (e) {
-        print("Error: $e");
-      }
-      idsRelationship = [firstIds[0].toString(), secondIds[0].toString()];
+      controllers = List.generate(fields.length, (index) => TextEditingController());
     } else {
       title = "Errore";
     }
@@ -75,44 +59,6 @@ class _CreateScreenState<T extends DeserJson> extends State<CreateScreen<T>> {
               ),
 
               const SizedBox(width: 8),
-              
-              if (T == Like)
-                Row(
-                  children: [
-                    Expanded(child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        value: idsRelationship[0],
-                        onChanged: (String? newValue) {
-                          setState(() {
-                            idsRelationship[0] = newValue!;
-                          });
-                        },
-                        items: firstIds.map<DropdownMenuItem<String>>((int value) {
-                          return DropdownMenuItem<String>(
-                            value: "$value",
-                            child: Text("$value"),
-                          );
-                        }).toList(),
-                      ),
-                    ),),
-                    Expanded(child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        value: idsRelationship[1],
-                        onChanged: (String? newValue) {
-                          setState(() {
-                            idsRelationship[1] = newValue!;
-                          });
-                        },
-                        items: secondIds.map<DropdownMenuItem<String>>((int value) {
-                          return DropdownMenuItem<String>(
-                            value: "$value",
-                            child: Text("$value"),
-                          );
-                        }).toList(),
-                      ),
-                    ),),
-                  ],
-                ),
 
               for (var field in fields)
                 Column(
@@ -122,11 +68,11 @@ class _CreateScreenState<T extends DeserJson> extends State<CreateScreen<T>> {
                       children: [
                         Expanded(
                           child: TextField(
+                            controller: controllers[fields.indexOf(field)],
                             decoration: InputDecoration(
                               labelText: field,
                               border: const OutlineInputBorder(),
                             ),
-                            controller: controllers[fields.indexOf(field)],
                           ),
                         ),
                       ],
@@ -139,40 +85,49 @@ class _CreateScreenState<T extends DeserJson> extends State<CreateScreen<T>> {
               Row(
                 children: [
                   Expanded(
-                    child: ElevatedButton(
+                    child: ElevatedButton(//SAVE BTN
                       onPressed: () async {
                         try {
                           Map<String, String> data = {};
 
-                          for (var field in fields) {
-                            data[field] = controllers[fields.indexOf(field)].text;
+                          for (var i = 0; i < fields.length; i++) {
+                            data[fields[i]] = controllers[i].text;
                           }
 
-                          Fortservice().createT<T>(data);
+                          // Call the async function *before* setState
+                          await Fortservice().updateT<T>(data);
 
+                          // trigger reload
                           for (var controller in controllers) {
                             controller.clear();
                           }
 
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text("Creato!"))
+                            const SnackBar(
+                              content: Text("Aggiornamento avvenuto con successo!"),
+                            ),
                           );
                         } catch (e) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text("Errore: $e"))
+                            SnackBar(
+                              content: Text("Errore: $e"),
+                            ),
                           );
                         }
                       },
-                      child: const Text("Crea")
+                      child: Text(title),
                     ),
                   ),
                 ],
-              ),
+              )
 
               // Row(
               //   children: [
               //     ElevatedButton(//SAVE BTN
               //       onPressed: () async {
+              //         if (inputController.text != "") {
+              //           savedFilters[selectedFilter] = inputController.text;
+              //           inputController.clear();
 
               //           // Call the async function *before* setState
               //           List<T> newList = await Fortservice().getT(savedFilters);
@@ -261,40 +216,3 @@ class _CreateScreenState<T extends DeserJson> extends State<CreateScreen<T>> {
     );
   }
 }
-
-ListTile listTileOf<T>(T entry) {
-  if(T == Utente) {
-    Utente u = entry as Utente;
-    return ListTile(
-      title: Text(u.username),
-      subtitle: Text('ID: ${u.id}'),
-    );
-
-  } else if(T == Post) {
-  Post p = entry as Post;
-    return ListTile(
-      title: Text(p.title),
-      subtitle: Text('ID: ${p.id}'),
-    );
-
-  } else if(T == Like) {
-    Like l = entry as Like;
-    return ListTile(
-      title: Text(l.post.title),
-      subtitle: Text("FROM: ${l.user.username}"),
-    );
-  }
-
-  return ListTile(
-    title: Text(entry.toString()),
-  );
-}
-
-/*
-Expanded(child: ListView.builder(//list of Ts
-            itemCount: list!.length,
-            itemBuilder: (context, index) {
-              return listTileOf<T>(list![index]);
-            },
-          ))
-*/

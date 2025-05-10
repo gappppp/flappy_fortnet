@@ -2,6 +2,7 @@
 
 import 'package:flappy_fortnet/model/deser_json.dart';
 import 'package:json_annotation/json_annotation.dart';
+import 'package:xml/xml.dart';
 
 part 'utenti.g.dart';
 
@@ -16,21 +17,13 @@ class Utente implements DeserJson<Utente> {
   static List<String> getFields() {
     return ["id", "username", "password"];
   }
-
-  static Map<String, String> getFieldsAndDataType() {
-    return {
-      "id": "int",
-      "username": "String",
-      "password": "String",
-    };
-  } 
   
   @override
   Map<String, dynamic> toJson() => <String, dynamic>{
-        'id': id,
-        'username': username,
-        'password': password,
-      };
+    'id': id,
+    'username': username,
+    'password': password,
+  };
 
   @override
   String getPrelude() {
@@ -39,6 +32,9 @@ class Utente implements DeserJson<Utente> {
 
   factory Utente.fromJson(Map<String, dynamic> json) =>
       _$UtenteFromJson(json); //'_' = metodo privato
+
+  factory Utente.fromXml(XmlElement xml) =>
+    Utente(id: int.parse(xml.getAttribute('id')!), password: xml.getElement('password')!.innerText, username: xml.getElement('username')!.innerText);
 
   // Map<String, dynamic> toJson() => _$UtenteToJson(this);
 }
