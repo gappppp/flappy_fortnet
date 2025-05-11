@@ -1,0 +1,7 @@
+# Enable the Rewrite Engine
+RewriteEngine On
+
+# Rewrite URLs to remove "index.php" from the URL
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ /php/fortnet.php/$1 [L]

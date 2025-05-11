@@ -4,7 +4,7 @@
     const DB_USERNAME = "root";
     const DB_PASSWORD = "";
     const DB_DATABASE = "fortnet";
-    const ALLOWED_METHODS = ["GET", "POST", "PUT", "DELETE", "PATCH"];
+    const ALLOWED_METHODS = ["GET", "POST", "PUT", "DELETE", "PATCH"];//TODO expand PATCH method
 
     // SQL SCHEMA ---------------------------------------------
     /*
@@ -227,15 +227,12 @@
 
         foreach ($arr as $value) {
             if (array_keys($value) !== [
-                "id_like",
                 "id_user", "username", "password",
                 "id_post", "title", "body"
             ])
                 return NULL; // check if $arr is a like array
 
             $like = $res->addChild("like");
-
-            $like->addAttribute("id", $value["id_like"]);
 
             $user = $like->addChild("user");
 
@@ -270,14 +267,12 @@
 
         foreach ($arr as $value) {
             if (array_keys($value) !== [
-                "id_like",
                 "id_user", "username", "password",
                 "id_post", "title", "body"
             ])
                 return NULL; // check if $arr is a like array
 
             $new_json[] = [
-                "id" => $value["id_like"],
                 "user" => [
                     "id" => $value["id_user"],
                     "username" => $value["username"],
@@ -294,6 +289,64 @@
         // build the json string
         $res = json_encode($new_json);
         return (($res === FALSE) ? NULL : $res); // return the array or NULL on failure
+    }
+
+    function posts_ids_assoc_to_json($arr) {
+        // check if $arr is an posts array
+        if (!is_array($arr)) return NULL;
+
+        foreach ($arr as $value) {
+            if(array_keys($value) !== ["id_post"]) return NULL;
+        }
+
+        // build the json string
+        $res = json_encode($arr);
+        return (($res === FALSE) ? NULL : $res); // return the array or NULL on failure
+    }
+
+    function posts_ids_assoc_to_xml($arr) {
+        $res = new SimpleXMLElement("<ids/>");
+
+        if (!is_array($arr)) return NULL; // check if $arr is an posts array
+        
+        foreach ($arr as $value) {
+            if (array_keys($value) !== ["id_post"])
+                return NULL; // check if $arr is an posts array
+
+            // build the XML
+            $user = $res->addChild("id", $value["id_post"]);
+        }
+
+        return $res->asXML();
+    }
+
+    function users_ids_assoc_to_json($arr) {
+        // check if $arr is an users array
+        if (!is_array($arr)) return NULL;
+
+        foreach ($arr as $value) {
+            if(array_keys($value) !== ["id_user"]) return NULL;
+        }
+
+        // build the json string
+        $res = json_encode($arr);
+        return (($res === FALSE) ? NULL : $res); // return the array or NULL on failure
+    }
+
+    function users_ids_assoc_to_xml($arr) {
+        $res = new SimpleXMLElement("<ids/>");
+
+        if (!is_array($arr)) return NULL; // check if $arr is an user array
+        
+        foreach ($arr as $value) {
+            if (array_keys($value) !== ["id_user"])
+                return NULL; // check if $arr is an users array
+
+            // build the XML
+            $user = $res->addChild("id", $value["id_user"]);
+        }
+
+        return $res->asXML();
     }
 
     // /**
@@ -383,14 +436,12 @@
      * <code>TRUE</code> or <code>NULL</code>, please check json_decode function.
      */
     function xml_or_json_to_assoc(string $raw_strig) {
-        if ($_SERVER["CONTENT_TYPE"] == "application/xml") {
+        if (str_contains($_SERVER["CONTENT_TYPE"], "application/xml")) {
             $xml = simplexml_load_string($raw_strig);
             $json = json_encode($xml);
             return json_decode($json,TRUE);
-
-        } else if ($_SERVER["CONTENT_TYPE"] == "application/xml") {
+        } else if (str_contains($_SERVER["CONTENT_TYPE"], "application/json")) {
             return json_decode($raw_strig,TRUE);
-
         }
 
         return FALSE;
@@ -630,7 +681,7 @@
     function get_likes($conn) {
         $res = "ERROR"; // set default result of function to ERROR (= failure)
 
-        $sql = "SELECT id_like, utenti.id_user, username, password, post.id_post, title, body FROM utenti LEFT JOIN like_post ON like_post.id_user=utenti.id_user LEFT JOIN post ON like_post.id_post=post.id_post"; // basic query
+        $sql = "SELECT utenti.id_user, username, password, post.id_post, title, body FROM utenti INNER JOIN like_post ON like_post.id_user=utenti.id_user INNER JOIN post ON like_post.id_post=post.id_post"; // basic query
         $stmt = $conn->prepare($sql); // use statements to avoid injections
 
         $res_query = $stmt->execute();
@@ -647,7 +698,7 @@
                 // echo "RES: $res";
             $raw_res->free();
         }
-
+        
         return $res;
     }
 
@@ -1040,53 +1091,53 @@
     * @param mixed $conn la connessione col database (mysqli)
     * @return string Returns a string message ("BAD REQUEST", "NO CONTENT", "ERROR")
     */
-    function put_mod_likes($conn) {
-        $sql = "UPDATE like_post SET "; // basic query
-        $values = [];
-        $stmt_types = "";
+    // function put_mod_likes($conn) {
+    //     $sql = "UPDATE like_post SET "; // basic query
+    //     $values = [];
+    //     $stmt_types = "";
 
-        // get body data
-        $input = file_get_contents('php://input');
+    //     // get body data
+    //     $input = file_get_contents('php://input');
 
-        $arr = xml_or_json_to_assoc($input);
+    //     $arr = xml_or_json_to_assoc($input);
         
-        // id_user to update a post
-        if (isset($arr['id_user']) && is_numeric($arr['id_user'])) {
-            // urldecode avoids error if using wildcards
-            $values["id_user=?"] = strval(urldecode($arr['id_user']));
-            $stmt_types .= "s";
-        }
+    //     // id_user to update a post
+    //     if (isset($arr['id_user']) && is_numeric($arr['id_user'])) {
+    //         // urldecode avoids error if using wildcards
+    //         $values["id_user=?"] = strval(urldecode($arr['id_user']));
+    //         $stmt_types .= "s";
+    //     }
 
-        // id_post to update a post
-        if (isset($arr['id_post']) && is_numeric($arr['id_post'])) {
-            // urldecode avoids error if using wildcards
-            $values["id_post=?"] = strval(urldecode($arr['id_post']));
-            $stmt_types .= "s";
-        }
+    //     // id_post to update a post
+    //     if (isset($arr['id_post']) && is_numeric($arr['id_post'])) {
+    //         // urldecode avoids error if using wildcards
+    //         $values["id_post=?"] = strval(urldecode($arr['id_post']));
+    //         $stmt_types .= "s";
+    //     }
 
-        // need id to update a post
-        if (isset($arr['id_like']) && is_numeric($arr['id_like']) && count($values) >= 2) {
-            // urldecode avoids error if using wildcards
-            $id = strval(urldecode($arr['id_like']));
+    //     // need id to update a post
+    //     if (isset($arr['id_like']) && is_numeric($arr['id_like']) && count($values) >= 2) {
+    //         // urldecode avoids error if using wildcards
+    //         $id = strval(urldecode($arr['id_like']));
 
-            $sql .= implode(', ', array_keys($values))." WHERE id_like=?";
+    //         $sql .= implode(', ', array_keys($values))." WHERE id_like=?";
 
-            $stmt = $conn->prepare($sql); // use statements to avoid injections
+    //         $stmt = $conn->prepare($sql); // use statements to avoid injections
 
-            $values[] = $id;
+    //         $values[] = $id;
 
-            // splat operator (...) work like this: e.g.: ...[1, 5, 7, 9] == turned into ==> 1, 5, 7, 9
-            $stmt->bind_param($stmt_types."i", ...array_values($values));
+    //         // splat operator (...) work like this: e.g.: ...[1, 5, 7, 9] == turned into ==> 1, 5, 7, 9
+    //         $stmt->bind_param($stmt_types."i", ...array_values($values));
 
-            $res_query = $stmt->execute();
+    //         $res_query = $stmt->execute();
 
-            return ($res_query) ? "NO CONTENT" : "ERROR";
+    //         return ($res_query) ? "NO CONTENT" : "ERROR";
 
-            return "NO CONTENT";
-        }
+    //         return "NO CONTENT";
+    //     }
 
-        return "BAD REQUEST";
-    }
+    //     return "BAD REQUEST";
+    // }
 
     /**
     * DELETE a like 👌 (PUT method since it's a relation).
@@ -1096,30 +1147,74 @@
     * <code>
     *   // DELETE a user
     *   $conn = new mysqli(DB_HOSTNAME, DB_USERNAME, DB_PASSWORD, DB_DATABASE);
-    *   put_del_likes($conn);
+    *   put_del_like($conn);
     * </code>
     * @param mixed $conn la connessione col database (mysqli)
     * @return string Returns a string message ("BAD REQUEST", "NO CONTENT", "ERROR")
     */
-    function put_del_likes($conn) {
-        $sql = "DELETE FROM like_post WHERE id_like=?"; // basic query
+    function put_del_like($conn) {
+        $sql = "DELETE FROM like_post WHERE id_user=? AND id_post=?"; // basic query
+        $ids = []; // ids to delete
 
-        // need id to delete a user
-        if (isset($_GET['id'])) {
+        $input = file_get_contents('php://input');
+
+        $arr = xml_or_json_to_assoc($input);
+
+        if (isset($arr['id_user'])) {
             // urldecode avoids error if using wildcards
-            $id = strval(urldecode($_GET['id']));
+            $values[] = strval(urldecode($arr['id_user']));
+        } else return "BAD REQUEST"; // bad request
 
-            $stmt = $conn->prepare($sql); // use statements to avoid injections
+        if (isset($arr['id_post'])) {
+            // urldecode avoids error if using wildcards
+            $values[] = strval(urldecode($arr['id_post']));
+        } else return "BAD REQUEST"; // bad request
 
-            // splat operator (...) work like this: e.g.: ...[1, 5, 7, 9] == turned into ==> 1, 5, 7, 9
-            $stmt->bind_param("i", $id);
+        $stmt = $conn->prepare($sql); // use statements to avoid injections
 
-            $res = $stmt->execute();
+        // splat operator (...) work like this: e.g.: ...[1, 5, 7, 9] == turned into ==> 1, 5, 7, 9
+        $stmt->bind_param("ii", ...$values);
 
-            return ($res) ? "NO CONTENT" : "ERROR";
-        }
+        $res = $stmt->execute();
 
-        return "BAD REQUEST"; // bad request
+        return ($res) ? "NO CONTENT" : "ERROR";
+    }
+
+    // PATCH ----------------------------------------------
+    /**
+    * PUT/UPDATE a user 👌.
+    * Updates a user the <code>username</code> or the <code>password</code> or both of them
+    * and the id of the user is specified in the body of the request
+    *
+    * How to use this function:
+    * <code>
+    *   // PUT/UPDATE a user
+    *   $conn = new mysqli(DB_HOSTNAME, DB_USERNAME, DB_PASSWORD, DB_DATABASE);
+    *   put_user($conn);
+    * </code>
+    * @param mixed $conn la connessione col database (mysqli)
+    * @return string Returns a string message ("BAD REQUEST", "NO CONTENT", "ERROR")
+    */
+    function patch_user($conn) {
+        put_user($conn);
+    }
+
+    /**
+    * PUT/UPDATE a post 👌.
+    * Updates a post the <code>title</code> or the <code>body</code> or both of them
+    * and the id of the post is specified in the body of the request
+    *
+    * How to use this function:
+    * <code>
+    *   // PUT/UPDATE a post
+    *   $conn = new mysqli(DB_HOSTNAME, DB_USERNAME, DB_PASSWORD, DB_DATABASE);
+    *   put_post($conn);
+    * </code>
+    * @param mixed $conn la connessione col database (mysqli)
+    * @return string Returns a string message ("BAD REQUEST", "NO CONTENT", "ERROR")
+    */
+    function patch_post($conn) {
+        put_post($conn);
     }
 
     // DELETE ----------------------------------------------
@@ -1139,10 +1234,14 @@
     function delete_user($conn) {
         $sql = "DELETE FROM utenti WHERE id_user=?"; // basic query
 
+        $input = file_get_contents('php://input');
+
+        $arr = xml_or_json_to_assoc($input);
+
         // need id to delete a user
-        if (isset($_GET['id'])) {
+        if (isset($arr['id'])) {
             // urldecode avoids error if using wildcards
-            $id = strval(urldecode($_GET['id']));
+            $id = strval(urldecode($arr['id']));
 
             $stmt = $conn->prepare($sql); // use statements to avoid injections
 
@@ -1173,10 +1272,14 @@
     function delete_post($conn) {
         $sql = "DELETE FROM post WHERE id_post=?"; // basic query
 
+        $input = file_get_contents('php://input');
+
+        $arr = xml_or_json_to_assoc($input);
+
         // need id to delete a post
-        if (isset($_GET['id'])) {
+        if (isset($arr['id'])) {
             // urldecode avoids error if using wildcards
-            $id = strval(urldecode($_GET['id']));
+            $id = strval(urldecode($arr['id']));
 
             $stmt = $conn->prepare($sql); // use statements to avoid injections
 
@@ -1191,8 +1294,56 @@
         return "BAD REQUEST"; // bad request
     }
 
+    // Functionality -------------------------------------
+    function get_users_ids($conn) {
+        $sql = "SELECT id_user FROM utenti"; // basic query
+
+        $stmt = $conn->prepare($sql); // use statements to avoid injections
+
+        $res_query = $stmt->execute();
+
+        if ($res_query) {
+            $raw_res = $stmt->get_result();
+            $res_arr = $raw_res->fetch_all(MYSQLI_ASSOC);
+
+            // turn array to XML or JSON, on format failure report (a general) ERRROR
+            $res = assoc_to_xml_or_json("users_ids_assoc_to_xml", "users_ids_assoc_to_json", $res_arr);
+            if ($res === FALSE || $res === NULL) $res = "ERROR";
+
+            $raw_res->free();
+            
+            return $res;
+        }
+
+
+        return "ERROR"; // error in query
+    }
+
+    function get_posts_ids($conn) {
+        $sql = "SELECT id_post FROM post"; // basic query
+
+        $stmt = $conn->prepare($sql); // use statements to avoid injections
+
+        $res_query = $stmt->execute();
+
+        if ($res_query) {
+            $raw_res = $stmt->get_result();
+            $res_arr = $raw_res->fetch_all(MYSQLI_ASSOC);
+
+            // turn array to XML or JSON, on format failure report (a general) ERRROR
+            $res = assoc_to_xml_or_json("posts_ids_assoc_to_xml", "posts_ids_assoc_to_json", $res_arr);
+            if ($res === FALSE || $res === NULL) $res = "ERROR";
+
+            $raw_res->free();
+
+            return $res;
+        }
+
+        return "ERROR"; // error in query
+    }
+
+    // CORS ------------------------------------------------
     function cors() {
-    
         // Allow from any origin
         if (isset($_SERVER['HTTP_ORIGIN'])) {
             // Decide if the origin in $_SERVER['HTTP_ORIGIN'] is one
@@ -1207,7 +1358,7 @@
             
             if (isset($_SERVER['HTTP_ACCESS_CONTROL_REQUEST_METHOD']))
                 // may also be using PUT, PATCH, HEAD etc
-                header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
+                header("Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS");
             
             if (isset($_SERVER['HTTP_ACCESS_CONTROL_REQUEST_HEADERS']))
                 header("Access-Control-Allow-Headers: {$_SERVER['HTTP_ACCESS_CONTROL_REQUEST_HEADERS']}");
@@ -1215,11 +1366,9 @@
             exit(0);
         }
     }
-    
 
     // MAIN BODY ---------------------------------------------
     cors();
-    
     $statuscode = 405; // status code inizializzato a 405 Method Not Allowed
 
     // use this to let code work in most php versions
@@ -1245,8 +1394,10 @@
             else if($res == "ERROR") $statuscode = 500; // general server error
             else $statuscode = 200; // operation executed successfuly
         }
+
     } catch (mysqli_sql_exception $mse) {
         $statuscode = 500;
+        echo "<p>ERROR REPORT: ".$mse."</p>";// TEMP DEBUG
     }
 
     http_response_code($statuscode); // return status code of the response
