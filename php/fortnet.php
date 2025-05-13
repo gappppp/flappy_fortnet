@@ -9,9 +9,9 @@
     // SQL SCHEMA ---------------------------------------------
     /*
     CREATE TABLE `like_post` (
-    	`id_like` int(11) PRIMARY KEY NOT NULL AUTO_INCREMENT,
-        `id_user` int(11) NOT NULL,
-        `id_post` int(11) NOT NULL
+    	`id_user` int(11) PRIMARY KEY NOT NULL AUTO_INCREMENT,
+        `id_post` int(11) NOT NULL,
+        PRIMARY KEY (`id_user`, `id_post`)
     );
 
     CREATE TABLE `post` (
@@ -30,6 +30,14 @@
     // INFOS ---------------------------------------------
     /*
     request should be formed like this: http://[server_name]/php/fortnet.php/[operation]?[querystring]
+    
+        Operation List:
+    -------------------------------------------------------------------------------------------------
+    -------- RESOURCE -------- GET -------- POST -------- PUT -------- PATCH -------- DELETE --------
+    -------- Utenti   --------  ✔  --------  ✔  --------  ✔  --------  ✔   --------   ✔    --------
+    -------- Like     --------  ✔  --------  ✖  --------  ✔  --------  ✖   --------   ✖    --------
+    -------- Post     --------  ✔  --------  ✔  --------  ✔  --------  ✔   --------   ✔    --------
+    -------------------------------------------------------------------------------------------------
 
     WEB API
     // TODO
@@ -47,7 +55,7 @@
     - likes (type: READ) --> returns an XML or JSON of every like
     - like_search (type: READ) --> returns an XML or JSON of likes,
         only the likes that satisfy the filter given as parameter will be returned
-        - parameters: id_like(unsigned_int), format('XML'|'JSON')
+        - parameters: format('XML'|'JSON')
             id_user(unsigned_int), username(string),
             id_post(unsigned_int), title(string), body(string)
 
@@ -215,7 +223,7 @@
      * converts an associative array of likes into a SimpleXMLElement.
      * @param array $arr an array of likes with the following structure:
      *  [
-     *      ["id_like" => "...", "id_user" => "...", "username" => "...", "password" => "...", "id_post" => "...", "title" => "...", "body" => "..."],
+     *      ["id_user" => "...", "username" => "...", "password" => "...", "id_post" => "...", "title" => "...", "body" => "..."],
      *      ...
      *  ]
      * @return SimpleXMLElement|NULL The XML representation of the likes or NULL on failure.
@@ -254,7 +262,7 @@
      * converts an associative array of likes into a JSON string.
      * @param array $arr an array of likes with the following structure:
      *  [
-     *      ["id_like" => "...", "id_user" => "...", "username" => "...", "password" => "...", "id_post" => "...", "title" => "...", "body" => "..."],
+     *      ["id_user" => "...", "username" => "...", "password" => "...", "id_post" => "...", "title" => "...", "body" => "..."],
      *      ...
      *  ]
      * @return string|NULL The JSON representation of the likes or NULL on failure.
@@ -703,7 +711,7 @@
     }
 
     /**
-    * GET all user liked posts that satisfy the querystring like <code>id_like</code> and/or <code>id_user</code> and/or <code>username</code>
+    * GET all user liked posts that satisfy the querystring like <code>id_user</code> and/or <code>username</code>
     * and/or <code>password</code> and/or <code>id_post</code> and/or <code>title</code> and/or <code>body</code>,
     * this method will list all user liked posts that respect the filters (GET params)
     *
@@ -722,19 +730,9 @@
     function get_search_like($conn) {
         $res = "ERROR"; // set default result of function to ERROR (= failure)
 
-        $sql = "SELECT id_like, utenti.id_user, username, password, post.id_post, title, body FROM utenti LEFT JOIN like_post ON like_post.id_user=utenti.id_user LEFT JOIN post ON post.id_post=like_post.id_post"; // basic query
+        $sql = "SELECT utenti.id_user, username, password, post.id_post, title, body FROM utenti LEFT JOIN like_post ON like_post.id_user=utenti.id_user LEFT JOIN post ON post.id_post=like_post.id_post"; // basic query
         $filters = []; // additional filters
         $stmt_types = ""; // data types of the filters (see PHP bind_param for more)
-
-        // add id filter if isset and contains digits (ctype_digits)
-        if (isset($_GET['id_like'])) {
-            if (ctype_digit($_GET['id_like'])) {
-                // urldecode avoids error if using wildcards (e.g.: '%')
-                $filters["like_post.id_like LIKE ?"] = strval(urldecode($_GET['id_like']));
-                $stmt_types .= "s";
-
-            } else return "BAD REQUEST"; // bad request
-        }
 
         // add id filter if isset and contains digits (ctype_digits)
         if (isset($_GET['id_user'])) {
@@ -1077,67 +1075,6 @@
 
         return ($res) ? "CREATED" : "ERROR";
     }
-
-    /**
-    * PUT/UPDATE a like 👌
-    * Updates a like, the <code>id_user</code> and the <code>id_post</code> are specified in the body of the request
-    *
-    * How to use this function:
-    * <code>
-    *   // PUT/UPDATE a like
-    *   $conn = new mysqli(DB_HOSTNAME, DB_USERNAME, DB_PASSWORD, DB_DATABASE);
-    *   put_mod_likes($conn);
-    * </code>
-    * @param mixed $conn la connessione col database (mysqli)
-    * @return string Returns a string message ("BAD REQUEST", "NO CONTENT", "ERROR")
-    */
-    // function put_mod_likes($conn) {
-    //     $sql = "UPDATE like_post SET "; // basic query
-    //     $values = [];
-    //     $stmt_types = "";
-
-    //     // get body data
-    //     $input = file_get_contents('php://input');
-
-    //     $arr = xml_or_json_to_assoc($input);
-        
-    //     // id_user to update a post
-    //     if (isset($arr['id_user']) && is_numeric($arr['id_user'])) {
-    //         // urldecode avoids error if using wildcards
-    //         $values["id_user=?"] = strval(urldecode($arr['id_user']));
-    //         $stmt_types .= "s";
-    //     }
-
-    //     // id_post to update a post
-    //     if (isset($arr['id_post']) && is_numeric($arr['id_post'])) {
-    //         // urldecode avoids error if using wildcards
-    //         $values["id_post=?"] = strval(urldecode($arr['id_post']));
-    //         $stmt_types .= "s";
-    //     }
-
-    //     // need id to update a post
-    //     if (isset($arr['id_like']) && is_numeric($arr['id_like']) && count($values) >= 2) {
-    //         // urldecode avoids error if using wildcards
-    //         $id = strval(urldecode($arr['id_like']));
-
-    //         $sql .= implode(', ', array_keys($values))." WHERE id_like=?";
-
-    //         $stmt = $conn->prepare($sql); // use statements to avoid injections
-
-    //         $values[] = $id;
-
-    //         // splat operator (...) work like this: e.g.: ...[1, 5, 7, 9] == turned into ==> 1, 5, 7, 9
-    //         $stmt->bind_param($stmt_types."i", ...array_values($values));
-
-    //         $res_query = $stmt->execute();
-
-    //         return ($res_query) ? "NO CONTENT" : "ERROR";
-
-    //         return "NO CONTENT";
-    //     }
-
-    //     return "BAD REQUEST";
-    // }
 
     /**
     * DELETE a like 👌 (PUT method since it's a relation).

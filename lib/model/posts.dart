@@ -35,5 +35,5 @@ class Post implements DeserJson<Post> {
 
   // Map<String, dynamic> toJson() => _$PostToJson(this);
   factory Post.fromXml(XmlElement xml) =>
-      Post(id: int.parse(xml.getAttribute('id')!), title: xml.getElement('title')!.value!, body: xml.getElement('body')!.value!);
+      Post(id: int.parse(xml.getAttribute('id')!), title: xml.getElement('title')!.innerText, body: xml.getElement('body')!.innerText);
 }

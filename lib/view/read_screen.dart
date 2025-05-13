@@ -1,6 +1,9 @@
 import 'package:flappy_fortnet/model/deser_json.dart';
+import 'package:flappy_fortnet/model/global.dart';
 import 'package:flappy_fortnet/model/likes.dart';
 import 'package:flappy_fortnet/model/posts.dart';
+import 'package:flappy_fortnet/view/detailed_view_table.dart';
+import 'package:flappy_fortnet/view/error_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flappy_fortnet/controller/fortservice.dart';
 import 'package:flappy_fortnet/model/utenti.dart';
@@ -13,6 +16,7 @@ class ReadScreen<T extends DeserJson> extends StatefulWidget {
 }
 
 class _ReadScreenState<T extends DeserJson> extends State<ReadScreen<T>> {
+  var globalVars = Global();
   String title = "Visualizza $T";
 
   String selectedFilter = "";
@@ -23,6 +27,7 @@ class _ReadScreenState<T extends DeserJson> extends State<ReadScreen<T>> {
 
   List<T>? list;
   bool isLoaded = false;
+  int statusCode = 500;//default saved as generic error
 
   @override
   void initState() {
@@ -31,21 +36,28 @@ class _ReadScreenState<T extends DeserJson> extends State<ReadScreen<T>> {
   }
 
   Future<void> loadT() async {
-    if (T == Utente) {
-      title = "Visualizza Utenti";
-      filters = Utente.getFields();
-      list = (await Fortservice().getAllUsers())!.cast<T>();
-    } else if (T == Post) {
-      title = "Visualizza Posts";
-      filters = Post.getFields();
-      list = (await Fortservice().getAllPosts())!.cast<T>();
-    } else if (T == Like) {
-      title = "Visualizza Likes";
-      filters = Like.getFields();
-      list = (await Fortservice().getAllLikes())!.cast<T>();
-    } else {
-      title = "Errore";
+    try {
+      list = await Fortservice().getAllT();
+      statusCode = 200;
+
+      if (T == Utente) {
+        filters = Utente.getFields();
+      } else if (T == Post) {
+        filters = Post.getFields();
+      } else if (T == Like) {
+        filters = Like.getFields();
+      }
+
+    } catch (e) {
       list = [];
+      filters = [];
+
+      try {
+        statusCode = int.parse(e.toString());
+      } catch (e) {
+        statusCode = 500;
+      }
+
     }
 
     selectedFilter = filters.firstOrNull ?? '';
@@ -58,15 +70,16 @@ class _ReadScreenState<T extends DeserJson> extends State<ReadScreen<T>> {
   @override
   Widget build(BuildContext context) {
     final _currentRoute = ModalRoute.of(context)?.settings.name;
+    // ignore: unused_local_variable
     final currentRoute =
         _currentRoute!.endsWith('/') ? _currentRoute : '$_currentRoute/';
 
     return Scaffold(
       appBar: AppBar(title: Text(title)),
       body: isLoaded && list != null
-          ? (list!.length == 1)
-              ? buildDetailed()
-              : buildSummary()
+          ? (statusCode == 200 || statusCode == 204)
+            ? buildReady()
+            : ErrorScreen.auto(errorCode: statusCode, header: "Errore $statusCode")
           : buildOnLoading(),
     );
   }
@@ -75,7 +88,7 @@ class _ReadScreenState<T extends DeserJson> extends State<ReadScreen<T>> {
     return const Center(child: CircularProgressIndicator());
   }
 
-  Widget buildSummary() {
+  Widget buildReady() {
     final String savedFiltersString = (savedFilters.isEmpty)
         ? "Nessun filtro impostato"
         : "filtri applicati: ${savedFilters.toString()}";
@@ -142,16 +155,39 @@ class _ReadScreenState<T extends DeserJson> extends State<ReadScreen<T>> {
               //SAVE BTN
               onPressed: () async {
                 if (inputController.text != "") {
-                  savedFilters[selectedFilter] = inputController.text;
-                  inputController.clear();
+                  if(selectedFilter.startsWith("id") && int.tryParse(inputController.text) == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("Prego inserire un valore numerico sui campi ID"),
+                        duration: Duration(seconds: 1),
+                      ),
+                    );
 
-                  // Call the async function *before* setState
-                  List<T> newList = await Fortservice().getT(savedFilters);
+                  } else {
+                  // if (
+                  //   (selectedFilter.startsWith("id") && int.tryParse(inputController.text) != null) ||
+                  //   !selectedFilter.startsWith("id")
+                  // ) {
+                    savedFilters[selectedFilter] = inputController.text;
+                    inputController.clear();
 
-                  // trigger reload
-                  setState(() {
-                    list = newList;
-                  });
+                    // Call the async function *before* setState
+                    try {
+                      List<T> newList = await Fortservice().getT(savedFilters);
+                      statusCode = 200;
+
+                      // trigger reload
+                      setState(() {
+                        list = newList;
+                      });
+                    } catch (e) {
+                      try {
+                        statusCode = int.parse(e.toString());
+                      } catch (e) {
+                        statusCode = 500;
+                      }
+                    }
+                  }
                 }
               },
               child: const Text('Salva filtro'),
@@ -162,13 +198,24 @@ class _ReadScreenState<T extends DeserJson> extends State<ReadScreen<T>> {
             ElevatedButton(
               //RESET BTN
               onPressed: () async {
-                List<T> newList = await Fortservice().getAllT();
+                try {
+                  List<T> newList = await Fortservice().getAllT();
+                  statusCode = 200;
+                  
+                  // trigger reload
+                  setState(() {
+                    list = newList;
+                    savedFilters.clear();
+                  });
+                  
+                } catch (e) {
+                  try {
+                    statusCode = int.parse(e.toString());
+                  } catch (e) {
+                    statusCode = 500;
+                  }
 
-                // trigger reload
-                setState(() {
-                  list = newList;
-                  savedFilters.clear();
-                });
+                }
               },
               child: const Text('Reset dei filtri'),
             ),
@@ -185,44 +232,10 @@ class _ReadScreenState<T extends DeserJson> extends State<ReadScreen<T>> {
 
         const SizedBox(height: 8), //space
 
-        list!.isNotEmpty
-            ? Expanded(
-                child: ListView.builder(
-                //list of Ts
-                itemCount: list!.length,
-                itemBuilder: (context, index) {
-                  final element = list![index];
-
-                  return Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          padding: EdgeInsets.zero,
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8)),
-                          elevation: 2,
-                        ),
-                        onPressed: () async {
-                          List<T> newList = await Fortservice().getT(
-                              //get specified T
-                              Map.from(<String, String>{
-                            filters[0]: element.toJson()[filters[0]].toString()
-                          }));
-
-                          savedFilters.clear();
-                          savedFilters['id'] =
-                              element.toJson()[filters[0]].toString();
-
-                          // trigger reload
-                          setState(() {
-                            list = newList;
-                            savedFilters.clear();
-                          });
-                        },
-                        child: listTileOf<T>(list![index]),
-                      ));
-                },
-              ))
+        list!.isNotEmpty// TODOHERE
+            ? (list!.length == 1)
+              ? detailedOne()
+              : summarizedList() 
             : (savedFilters.isEmpty
                 ? Text("Nessun $T registrato nel DataBase!")
                 : Text("Nessun $T trovato con questi criteri di ricerca!"))
@@ -230,129 +243,80 @@ class _ReadScreenState<T extends DeserJson> extends State<ReadScreen<T>> {
     ));
   }
 
-  Widget buildDetailed() {
-    final String savedFiltersString = (savedFilters.isEmpty)
-        ? "Nessun filtro impostato"
-        : "filtri applicati: ${savedFilters.toString()}";
+  Widget summarizedList() {
+    return Expanded(
+      child: ListView.builder(
+      //list of Ts
+      itemCount: list!.length,
+      itemBuilder: (context, index) {
+        final element = list![index];
 
-    final jsonObj = list![0].toJson();
-
-    return Container(
-      padding: const EdgeInsets.all(8),
-      child: Column(
-      children: [
-        // for (var i = 0; i < jsonObj.length; i++) {
-        //   // stampa foreach <div>key: value</div><br> 
-        // }
-          Row(
-            children: [
-              //TEXTFIELD
-              Expanded(
-                child: TextField(
-                  controller: inputController,
-                  decoration: const InputDecoration(
-                    labelText: 'Inserisci il valore del filtro',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
+        return Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                padding: EdgeInsets.zero,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8)),
+                elevation: 2,
               ),
-            ],
-          ),
-
-        const SizedBox(height: 8),
-
-        Row(
-          children: [
-            ElevatedButton(
-              //SAVE BTN
               onPressed: () async {
-                if (inputController.text != "") {
-                  savedFilters[selectedFilter] = inputController.text;
-                  inputController.clear();
-
-                  // Call the async function *before* setState
-                  List<T> newList = await Fortservice().getT(savedFilters);
-
+                try {
+                  Map<String, String> newFilters = (T == Like)
+                    ? <String, String>{
+                          "id_user": (element as Like).user.id.toString(),
+                          "id_post": (element as Like).post.id.toString(),
+                      }
+                    : <String, String>{
+                          filters[0]: element.toJson()[filters[0]].toString()
+                      };
+                  List<T> newList = await Fortservice().getT(
+                    //get specified T
+                    newFilters
+                  );
+                  statusCode = 200;
+                  
                   // trigger reload
                   setState(() {
                     list = newList;
+                    savedFilters = Map.from(newFilters);
                   });
+                  
+                } catch (e) {
+                  try {
+                    statusCode = int.parse(e.toString());
+                  } catch (e) {
+                    statusCode = 500;
+                  }
+
                 }
               },
-              child: const Text('Salva filtro'),
-            ),
-
-            const SizedBox(width: 8), //space
-
-            ElevatedButton(
-              //RESET BTN
-              onPressed: () async {
-                List<T> newList = await Fortservice().getAllT();
-
-                // trigger reload
-                setState(() {
-                  list = newList;
-                  savedFilters.clear();
-                });
-              },
-              child: const Text('Reset dei filtri'),
-            ),
-          ],
-        ),
-
-        const SizedBox(height: 8), //space
-
-        Row(
-          children: [
-            Text(savedFiltersString),
-          ],
-        ),
-
-        const SizedBox(height: 8), //space
-
-        list!.isNotEmpty
-            ? Expanded(
-                child: ListView.builder(
-                //list of Ts
-                itemCount: list!.length,
-                itemBuilder: (context, index) {
-                  final element = list![index];
-
-                  return Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          padding: EdgeInsets.zero,
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8)),
-                          elevation: 2,
-                        ),
-                        onPressed: () async {
-                          List<T> newList = await Fortservice().getT(
-                              //get specified T
-                              Map.from(<String, String>{
-                            filters[0]: element.toJson()[filters[0]].toString()
-                          }));
-
-                          savedFilters.clear();
-                          savedFilters['id'] =
-                              element.toJson()[filters[0]].toString();
-
-                          // trigger reload
-                          setState(() {
-                            list = newList;
-                            savedFilters.clear();
-                          });
-                        },
-                        child: listTileOf<T>(list![index]),
-                      ));
-                },
-              ))
-            : (savedFilters.isEmpty
-                ? Text("Nessun $T registrato nel DataBase!")
-                : Text("Nessun $T trovato con questi criteri di ricerca!"))
-      ],
+              child: listTileOf<T>(list![index]),
+            ));
+      },
     ));
+  }
+
+  Widget detailedOne() {
+    var jsonObj = list![0].toJson();
+
+    //modify obj if has nested object like DeserJson
+    final entries = List<MapEntry<String, dynamic>>.from(jsonObj.entries);
+    for (var entry in entries) {
+      if (entry.value is DeserJson) {
+        var jsonElement = (entry.value as DeserJson).toJson();
+
+        jsonObj.addAll(
+          jsonElement.map(
+            (key, value) => MapEntry('${entry.key}.$key', value),
+          ),
+        );
+
+        jsonObj.remove(entry.key);
+      }
+    }
+
+    return DetailedViewTable(data: jsonObj);
   }
 }
 
@@ -381,12 +345,3 @@ ListTile listTileOf<T>(T entry) {
     title: Text(entry.toString()),
   );
 }
-
-/*
-Expanded(child: ListView.builder(//list of Ts
-            itemCount: list!.length,
-            itemBuilder: (context, index) {
-              return listTileOf<T>(list![index]);
-            },
-          ))
-*/

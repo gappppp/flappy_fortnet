@@ -8,8 +8,6 @@ import 'package:flappy_fortnet/view/read_screen.dart';
 import 'package:flappy_fortnet/view/update_screen.dart';
 import 'package:flutter/material.dart';
 
-var prefferedLanguage = "json";
-
 void main() {
   runApp(const MyApp());
 }

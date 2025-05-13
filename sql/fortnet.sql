@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Creato il: Apr 10, 2025 alle 22:10
+-- Creato il: Mag 14, 2025 alle 00:52
 -- Versione del server: 10.4.32-MariaDB
 -- Versione PHP: 8.2.12
 
@@ -28,7 +28,6 @@ SET time_zone = "+00:00";
 --
 
 CREATE TABLE `like_post` (
-  `id_like` int(11) NOT NULL,
   `id_user` int(11) NOT NULL,
   `id_post` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -37,8 +36,11 @@ CREATE TABLE `like_post` (
 -- Dump dei dati per la tabella `like_post`
 --
 
-INSERT INTO `like_post` (`id_like`, `id_user`, `id_post`) VALUES
-(1, 1, 10);
+INSERT INTO `like_post` (`id_user`, `id_post`) VALUES
+(1, 1),
+(1, 2),
+(1, 10),
+(11, 10);
 
 -- --------------------------------------------------------
 
@@ -57,7 +59,7 @@ CREATE TABLE `post` (
 --
 
 INSERT INTO `post` (`id_post`, `title`, `body`) VALUES
-(1, 'Insert title here', 'Insert body here'),
+(1, 'new web', 'service'),
 (2, 'Insert title here', 'Insert body here'),
 (10, 'fortnite new network', 'introducing fortnite new network: fortnet!');
 
@@ -81,7 +83,10 @@ INSERT INTO `utenti` (`id_user`, `username`, `password`) VALUES
 (1, 'gappero', 'perogap'),
 (2, 'mongols', 'fire'),
 (10, 'pargo', 'letto'),
-(11, 'mango', 'losco');
+(11, 'mango', 'losco'),
+(13, 'skiski', 'toilet'),
+(14, 'dop dop', 'yes yes'),
+(15, 'crocodillo', 'bombardillo');
 
 --
 -- Indici per le tabelle scaricate
@@ -91,7 +96,7 @@ INSERT INTO `utenti` (`id_user`, `username`, `password`) VALUES
 -- Indici per le tabelle `like_post`
 --
 ALTER TABLE `like_post`
-  ADD PRIMARY KEY (`id_like`);
+  ADD PRIMARY KEY (`id_user`,`id_post`);
 
 --
 -- Indici per le tabelle `post`
@@ -111,12 +116,6 @@ ALTER TABLE `utenti`
 --
 
 --
--- AUTO_INCREMENT per la tabella `like_post`
---
-ALTER TABLE `like_post`
-  MODIFY `id_like` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
-
---
 -- AUTO_INCREMENT per la tabella `post`
 --
 ALTER TABLE `post`
@@ -126,7 +125,7 @@ ALTER TABLE `post`
 -- AUTO_INCREMENT per la tabella `utenti`
 --
 ALTER TABLE `utenti`
-  MODIFY `id_user` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
+  MODIFY `id_user` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

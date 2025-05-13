@@ -12,7 +12,6 @@ Like _$LikeFromJson(Map<String, dynamic> json) => Like(
 );
 
 // Map<String, dynamic> _$LikeToJson(Like instance) => <String, dynamic>{
-//       'id': instance.id,
 //       'user': instance.user,
 //       'post': instance.post,
 //     };

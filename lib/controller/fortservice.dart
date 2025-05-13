@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:flappy_fortnet/main.dart';
+import 'package:flappy_fortnet/model/global.dart';
 import 'package:flappy_fortnet/model/likes.dart';
 import 'package:http/http.dart' as http;
 import 'package:flappy_fortnet/model/posts.dart';
@@ -14,11 +14,13 @@ class Fortservice {
   }
 
   Future<List<int>> getUsersIds() async {
+    String preferedLanguage = Global().getPreferedLanguage();
+
     final client = http.Client();
-    final uri = Uri.parse("$_url/users_ids?format=$prefferedLanguage");
+    final uri = Uri.parse("$_url/users_ids?format=$preferedLanguage");
 
     Map<String, String> headers = {
-      'Accept': 'application/$prefferedLanguage',
+      'Accept': 'application/$preferedLanguage',
     };
 
     final res = await client.get(uri, headers: headers);
@@ -31,11 +33,13 @@ class Fortservice {
   }
 
   Future<List<int>> getPostsIds() async {
+    String preferedLanguage = Global().getPreferedLanguage();
+
     final client = http.Client();
-    final uri = Uri.parse("$_url/posts_ids?format=$prefferedLanguage");
+    final uri = Uri.parse("$_url/posts_ids?format=$preferedLanguage");
 
     Map<String, String> headers = {
-      'Accept': 'application/$prefferedLanguage',
+      'Accept': 'application/$preferedLanguage',
     };
 
     final res = await client.get(uri, headers: headers);
@@ -48,6 +52,8 @@ class Fortservice {
   }
 
   Future<List<Utente>?> getUsers(Map<String, String> filters) async {
+    String preferedLanguage = Global().getPreferedLanguage();
+
     final client = http.Client();
 
     String _filters = "";
@@ -61,36 +67,38 @@ class Fortservice {
       _filters = "$_filters&password=${filters['password']}";
     }
 
-    final uri = Uri.parse("$_url/search_user?format=$prefferedLanguage$_filters");
+    final uri = Uri.parse("$_url/search_user?format=$preferedLanguage$_filters");
 
     Map<String, String> headers = {
-      'Accept': 'application/$prefferedLanguage',
+      'Accept': 'application/$preferedLanguage',
     };
 
     final res = await client.get(uri, headers: headers);
 
     if (res.statusCode == 200) {
-      return (jsonDecode(res.body) as List) //GET JsonObj (array of 1 || n)
-          .map((utenteJson) => prefferedLanguage == "json" ? Utente.fromJson(utenteJson) : Utente.fromXml(utenteJson))
-          //use anonymous fn for each item now named utenteJson
-          .toList(); //conver all to list
+      return preferedLanguage == "json" ?
+        (jsonDecode(res.body) as List).map((utenteJson) => Utente.fromJson(utenteJson)).toList()
+        :
+        XmlDocument.parse(res.body).childElements.first.childElements.map(Utente.fromXml).toList();
     } else {
       throw Exception(res.statusCode);
     }
   }
 
   Future<List<Utente>?> getAllUsers() async {
+    String preferedLanguage = Global().getPreferedLanguage();
+
     final client = http.Client();
-    final uri = Uri.parse("$_url/users?format=$prefferedLanguage");
+    final uri = Uri.parse("$_url/users?format=$preferedLanguage");
 
     Map<String, String> headers = {
-      'Accept': 'application/$prefferedLanguage',
+      'Accept': 'application/$preferedLanguage',
     };
 
     final res = await client.get(uri, headers: headers);
     
     if (res.statusCode == 200) {
-      return prefferedLanguage == "json" ?
+      return preferedLanguage == "json" ?
         (jsonDecode(res.body) as List).map((utenteJson) => Utente.fromJson(utenteJson)).toList()
         :
         XmlDocument.parse(res.body).childElements.first.childElements.map(Utente.fromXml).toList();
@@ -102,6 +110,8 @@ class Fortservice {
 
 
   Future<List<Post>?> getPosts(Map<String, String> filters) async {
+    String preferedLanguage = Global().getPreferedLanguage();
+
     final client = http.Client();
 
     String _filters = "";
@@ -115,39 +125,41 @@ class Fortservice {
       _filters = "$_filters&body=${filters['body']}";
     }
 
-    final uri = Uri.parse("$_url/search_post?format=$prefferedLanguage$_filters");
+    final uri = Uri.parse("$_url/search_post?format=$preferedLanguage$_filters");
 
     Map<String, String> headers = {
-      'Accept': 'application/$prefferedLanguage',
+      'Accept': 'application/$preferedLanguage',
     };
 
     final res = await client.get(uri, headers: headers);
 
     if (res.statusCode == 200) {
-      return (jsonDecode(res.body) as List) //GET JsonObj (array of 1 || n)
-          .map((postJson) => prefferedLanguage == "json" ? Post.fromJson(postJson) : Post.fromXml(postJson))
-          //use anonymous fn for each item now named postJson
-          .toList(); //conver all to list
+      return preferedLanguage == "json" ?
+        (jsonDecode(res.body) as List).map((utenteJson) => Post.fromJson(utenteJson)).toList()
+        :
+        XmlDocument.parse(res.body).childElements.first.childElements.map(Post.fromXml).toList();
     } else {
       throw Exception(res.statusCode);
     }
   }
 
   Future<List<Post>?> getAllPosts() async {
+    String preferedLanguage = Global().getPreferedLanguage();
+
     final client = http.Client();
-    final uri = Uri.parse("$_url/posts?format=$prefferedLanguage");
+    final uri = Uri.parse("$_url/posts?format=$preferedLanguage");
 
     Map<String, String> headers = {
-      'Accept': 'application/$prefferedLanguage',
+      'Accept': 'application/$preferedLanguage',
     };
 
     final res = await client.get(uri, headers: headers);
 
     if (res.statusCode == 200) {
-      return (jsonDecode(res.body) as List) //GET JsonObj (array of 1 || n)
-          .map((postJson) => prefferedLanguage == "json" ? Post.fromJson(postJson) : Post.fromXml(postJson))
-          //use anonymous fn for each item now named postJson
-          .toList(); //conver all to list
+      return preferedLanguage == "json" ?
+        (jsonDecode(res.body) as List).map((utenteJson) => Post.fromJson(utenteJson)).toList()
+        :
+        XmlDocument.parse(res.body).childElements.first.childElements.map(Post.fromXml).toList();
     } else {
       throw Exception(res.statusCode);
     }
@@ -156,6 +168,8 @@ class Fortservice {
 
 
   Future<List<Like>?> getLikes(Map<String, String> filters) async {
+    String preferedLanguage = Global().getPreferedLanguage();
+
     final client = http.Client();
 
     String _filters = "";
@@ -183,39 +197,41 @@ class Fortservice {
       _filters = "$_filters&body=${filters['body']}";
     }
 
-    final uri = Uri.parse("$_url/search_like?format=$prefferedLanguage$_filters");
+    final uri = Uri.parse("$_url/search_like?format=$preferedLanguage$_filters");
 
     Map<String, String> headers = {
-      'Accept': 'application/$prefferedLanguage',
+      'Accept': 'application/$preferedLanguage',
     };
 
     final res = await client.get(uri, headers: headers);
     
     if (res.statusCode == 200) {
-      return (jsonDecode(res.body) as List) //GET JsonObj (array of 1 || n)
-          .map((likeJson) => prefferedLanguage == "json" ? Like.fromJson(likeJson) : Like.fromXml(likeJson))
-          //use anonymous fn for each item now named likeJson
-          .toList(); //conver all to list
+      return preferedLanguage == "json" ?
+        (jsonDecode(res.body) as List).map((utenteJson) => Like.fromJson(utenteJson)).toList()
+        :
+        XmlDocument.parse(res.body).childElements.first.childElements.map(Like.fromXml).toList();
     } else {
       throw Exception(res.statusCode);
     }
   }
 
   Future<List<Like>?> getAllLikes() async {
+    String preferedLanguage = Global().getPreferedLanguage();
+
     final client = http.Client();
-    final uri = Uri.parse("$_url/likes?format=$prefferedLanguage");
+    final uri = Uri.parse("$_url/likes?format=$preferedLanguage");
 
     Map<String, String> headers = {
-      'Accept': 'application/$prefferedLanguage',
+      'Accept': 'application/$preferedLanguage',
     };
 
     final res = await client.get(uri, headers: headers);
     
     if (res.statusCode == 200) {
-      return (jsonDecode(res.body) as List) //GET JsonObj (array of 1 || n)
-          .map((likeJson) => prefferedLanguage == "json" ? Like.fromJson(likeJson) : Like.fromXml(likeJson))
-          //use anonymous fn for each item now named likeJson
-          .toList(); //conver all to list
+      return preferedLanguage == "json" ?
+        (jsonDecode(res.body) as List).map((utenteJson) => Like.fromJson(utenteJson)).toList()
+        :
+        XmlDocument.parse(res.body).childElements.first.childElements.map(Like.fromXml).toList();
     } else {
       throw Exception(res.statusCode);
     }
@@ -252,21 +268,23 @@ class Fortservice {
   }
 
   Future<void> createUser(Map<String, String> user) async {
+    String preferedLanguage = Global().getPreferedLanguage();
+
     final client = http.Client();
     final uri = Uri.parse("$_url/user");
 
     var headers = {
-      'Content-Type': 'application/$prefferedLanguage',
+      'Content-Type': 'application/$preferedLanguage',
     };
 
     var body = "";
 
-    if (prefferedLanguage == "json") {
+    if (preferedLanguage == "json") {
       body = jsonEncode({
         'username': user['username'],
         'password': user['password'],
       });
-    } else if (prefferedLanguage == "xml") {
+    } else if (preferedLanguage == "xml") {
       body = "<user><username>${user['username']}</username><password>${user['password']}</password></user>";
     }
 
@@ -278,11 +296,12 @@ class Fortservice {
   }
 
   Future<void> createPost(Map<String, String> post) async {
+    String preferedLanguage = Global().getPreferedLanguage();
     final client = http.Client();
-    final uri = Uri.parse("$_url/$prefferedLanguage");
+    final uri = Uri.parse("$_url/$preferedLanguage");
 
     var headers = {
-      'Content-Type': 'application/$prefferedLanguage',
+      'Content-Type': 'application/$preferedLanguage',
     };
 
     var body = jsonEncode({
@@ -298,11 +317,13 @@ class Fortservice {
   }
 
   Future<void> createLike(Map<String, String> like) async {
+    String preferedLanguage = Global().getPreferedLanguage();
+
     final client = http.Client();
     final uri = Uri.parse("$_url/add_like");
 
     var headers = {
-      'Content-Type': 'application/$prefferedLanguage',
+      'Content-Type': 'application/$preferedLanguage',
     };
 
     var body = jsonEncode({
@@ -328,11 +349,13 @@ class Fortservice {
   }
 
   Future<void> updateUser(Map<String, String> user) async {
+    String preferedLanguage = Global().getPreferedLanguage();
+
     final client = http.Client();
     final uri = Uri.parse("$_url/user");
 
     var headers = {
-      'Content-Type': 'application/$prefferedLanguage',
+      'Content-Type': 'application/$preferedLanguage',
     };
 
     var body = jsonEncode({
@@ -349,11 +372,13 @@ class Fortservice {
   }
 
   Future<void> updatePost(Map<String, String> post) async {
+    String preferedLanguage = Global().getPreferedLanguage();
+
     final client = http.Client();
     final uri = Uri.parse("$_url/post");
 
     var headers = {
-      'Content-Type': 'application/$prefferedLanguage',
+      'Content-Type': 'application/$preferedLanguage',
     };
 
     var body = jsonEncode({
@@ -378,11 +403,13 @@ class Fortservice {
   }
 
   Future<void> deleteUser(int id) async {
+    String preferedLanguage = Global().getPreferedLanguage();
+
     final client = http.Client();
     final uri = Uri.parse("$_url/user");
 
     var headers = {
-      'Content-Type': 'application/$prefferedLanguage',
+      'Content-Type': 'application/$preferedLanguage',
     };
 
     var body = jsonEncode({
@@ -397,11 +424,13 @@ class Fortservice {
   }
 
   Future<void> deletePost(int id) async {
+    String preferedLanguage = Global().getPreferedLanguage();
+
     final client = http.Client();
     final uri = Uri.parse("$_url/post");
 
     var headers = {
-      'Content-Type': 'application/$prefferedLanguage',
+      'Content-Type': 'application/$preferedLanguage',
     };
 
     var body = jsonEncode({
@@ -416,11 +445,13 @@ class Fortservice {
   }
 
   Future<void> deleteLike(int firstId, int secondId) async {
+    String preferedLanguage = Global().getPreferedLanguage();
+    
     final client = http.Client();
     final uri = Uri.parse("$_url/del_like");
 
     var headers = {
-      'Content-Type': 'application/$prefferedLanguage',
+      'Content-Type': 'application/$preferedLanguage',
     };
 
     var body = jsonEncode({

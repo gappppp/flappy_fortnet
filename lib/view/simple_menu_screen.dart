@@ -1,4 +1,4 @@
-import 'package:flappy_fortnet/main.dart';
+import 'package:flappy_fortnet/model/global.dart';
 import 'package:flutter/material.dart';
 
 class SimpleMenuScreen extends StatefulWidget {
@@ -18,14 +18,12 @@ class SimpleMenuScreen extends StatefulWidget {
 }
 
 class _SimpleMenuScreen extends State<SimpleMenuScreen> {
-  var _prefferedLanguage = "json";
+  var globalVars = Global();
 
   void changeLanguage() {
     setState(() {
-      _prefferedLanguage = _prefferedLanguage == "json" ? "xml" : "json";
+      globalVars.changePreferedLanguage();
     });
-
-    prefferedLanguage = _prefferedLanguage;
   }
 
   @override
@@ -33,7 +31,7 @@ class _SimpleMenuScreen extends State<SimpleMenuScreen> {
     final _currentRoute = ModalRoute.of(context)?.settings.name;
     final currentRoute = _currentRoute!.endsWith('/') ? _currentRoute : '$_currentRoute/';
 
-    IconData icon = _prefferedLanguage == "json" ? Icons.data_object : Icons.code;
+    IconData icon = globalVars.getPreferedLanguage() == "json" ? Icons.data_object : Icons.code;
 
     return Scaffold(
       appBar: AppBar(
@@ -51,7 +49,7 @@ class _SimpleMenuScreen extends State<SimpleMenuScreen> {
               changeLanguage();
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text("Lingua dei dati cambiata in $_prefferedLanguage"),
+                  content: Text("Lingua dei dati cambiata in ${globalVars.getPreferedLanguage()}"),
                   duration: const Duration(seconds: 1),
                 ),
               );

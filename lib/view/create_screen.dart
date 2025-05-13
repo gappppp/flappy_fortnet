@@ -144,10 +144,18 @@ class _CreateScreenState<T extends DeserJson> extends State<CreateScreen<T>> {
                         try {
                           Map<String, String> data = {};
 
-                          for (var field in fields) {
-                            data[field] = controllers[fields.indexOf(field)].text;
+                          if (T != Like) {
+                            for (var field in fields) {
+                              data[field] = controllers[fields.indexOf(field)].text;
+                            }
+                          } else {
+                            data = <String, String>{
+                              "id_user": idsRelationship[0],
+                              "id_post": idsRelationship[1]
+                            };
                           }
-
+                          
+                          print("DATA BEFORE SEND: $data");
                           Fortservice().createT<T>(data);
 
                           for (var controller in controllers) {
