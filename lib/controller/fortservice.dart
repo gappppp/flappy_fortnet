@@ -6,6 +6,7 @@ import 'package:flappy_fortnet/model/posts.dart';
 import 'package:flappy_fortnet/model/utenti.dart';
 import 'package:xml/xml.dart';
 
+// Todo: fix update / patch
 class Fortservice {
   late String _url;
 
@@ -26,7 +27,17 @@ class Fortservice {
     final res = await client.get(uri, headers: headers);
 
     if (res.statusCode == 200) {
-      return (jsonDecode(res.body) as List).map((map) => map['id_user']!).toList().cast<int>();
+      return preferedLanguage == "json"
+          ? (jsonDecode(res.body) as List)
+              .map((map) => map['id_user']!)
+              .toList()
+              .cast<int>()
+          : XmlDocument.parse(res.body)
+              .childElements
+              .first
+              .childElements
+              .map((e) => int.parse(e.innerText))
+              .toList();
     } else {
       throw Exception(res.statusCode);
     }
@@ -45,7 +56,17 @@ class Fortservice {
     final res = await client.get(uri, headers: headers);
 
     if (res.statusCode == 200) {
-      return (jsonDecode(res.body) as List).map((map) => map['id_post']!).toList().cast<int>();
+      return preferedLanguage == "json"
+          ? (jsonDecode(res.body) as List)
+              .map((map) => map['id_post']!)
+              .toList()
+              .cast<int>()
+          : XmlDocument.parse(res.body)
+              .childElements
+              .first
+              .childElements
+              .map((e) => int.parse(e.innerText))
+              .toList();
     } else {
       throw Exception(res.statusCode);
     }
@@ -67,7 +88,8 @@ class Fortservice {
       _filters = "$_filters&password=${filters['password']}";
     }
 
-    final uri = Uri.parse("$_url/search_user?format=$preferedLanguage$_filters");
+    final uri =
+        Uri.parse("$_url/search_user?format=$preferedLanguage$_filters");
 
     Map<String, String> headers = {
       'Accept': 'application/$preferedLanguage',
@@ -76,10 +98,16 @@ class Fortservice {
     final res = await client.get(uri, headers: headers);
 
     if (res.statusCode == 200) {
-      return preferedLanguage == "json" ?
-        (jsonDecode(res.body) as List).map((utenteJson) => Utente.fromJson(utenteJson)).toList()
-        :
-        XmlDocument.parse(res.body).childElements.first.childElements.map(Utente.fromXml).toList();
+      return preferedLanguage == "json"
+          ? (jsonDecode(res.body) as List)
+              .map((utenteJson) => Utente.fromJson(utenteJson))
+              .toList()
+          : XmlDocument.parse(res.body)
+              .childElements
+              .first
+              .childElements
+              .map(Utente.fromXml)
+              .toList();
     } else {
       throw Exception(res.statusCode);
     }
@@ -96,18 +124,22 @@ class Fortservice {
     };
 
     final res = await client.get(uri, headers: headers);
-    
+
     if (res.statusCode == 200) {
-      return preferedLanguage == "json" ?
-        (jsonDecode(res.body) as List).map((utenteJson) => Utente.fromJson(utenteJson)).toList()
-        :
-        XmlDocument.parse(res.body).childElements.first.childElements.map(Utente.fromXml).toList();
+      return preferedLanguage == "json"
+          ? (jsonDecode(res.body) as List)
+              .map((utenteJson) => Utente.fromJson(utenteJson))
+              .toList()
+          : XmlDocument.parse(res.body)
+              .childElements
+              .first
+              .childElements
+              .map(Utente.fromXml)
+              .toList();
     } else {
       throw Exception(res.statusCode);
     }
   }
-
-
 
   Future<List<Post>?> getPosts(Map<String, String> filters) async {
     String preferedLanguage = Global().getPreferedLanguage();
@@ -125,7 +157,8 @@ class Fortservice {
       _filters = "$_filters&body=${filters['body']}";
     }
 
-    final uri = Uri.parse("$_url/search_post?format=$preferedLanguage$_filters");
+    final uri =
+        Uri.parse("$_url/search_post?format=$preferedLanguage$_filters");
 
     Map<String, String> headers = {
       'Accept': 'application/$preferedLanguage',
@@ -134,10 +167,16 @@ class Fortservice {
     final res = await client.get(uri, headers: headers);
 
     if (res.statusCode == 200) {
-      return preferedLanguage == "json" ?
-        (jsonDecode(res.body) as List).map((utenteJson) => Post.fromJson(utenteJson)).toList()
-        :
-        XmlDocument.parse(res.body).childElements.first.childElements.map(Post.fromXml).toList();
+      return preferedLanguage == "json"
+          ? (jsonDecode(res.body) as List)
+              .map((utenteJson) => Post.fromJson(utenteJson))
+              .toList()
+          : XmlDocument.parse(res.body)
+              .childElements
+              .first
+              .childElements
+              .map(Post.fromXml)
+              .toList();
     } else {
       throw Exception(res.statusCode);
     }
@@ -156,16 +195,20 @@ class Fortservice {
     final res = await client.get(uri, headers: headers);
 
     if (res.statusCode == 200) {
-      return preferedLanguage == "json" ?
-        (jsonDecode(res.body) as List).map((utenteJson) => Post.fromJson(utenteJson)).toList()
-        :
-        XmlDocument.parse(res.body).childElements.first.childElements.map(Post.fromXml).toList();
+      return preferedLanguage == "json"
+          ? (jsonDecode(res.body) as List)
+              .map((utenteJson) => Post.fromJson(utenteJson))
+              .toList()
+          : XmlDocument.parse(res.body)
+              .childElements
+              .first
+              .childElements
+              .map(Post.fromXml)
+              .toList();
     } else {
       throw Exception(res.statusCode);
     }
   }
-
-
 
   Future<List<Like>?> getLikes(Map<String, String> filters) async {
     String preferedLanguage = Global().getPreferedLanguage();
@@ -173,10 +216,7 @@ class Fortservice {
     final client = http.Client();
 
     String _filters = "";
-    if (filters['id_like'] != null) {
-      _filters = "$_filters&id_like=${filters['id_like']}";
-    }
-    
+
     if (filters['id_user'] != null) {
       _filters = "$_filters&id_user=${filters['id_user']}";
     }
@@ -197,19 +237,26 @@ class Fortservice {
       _filters = "$_filters&body=${filters['body']}";
     }
 
-    final uri = Uri.parse("$_url/search_like?format=$preferedLanguage$_filters");
+    final uri =
+        Uri.parse("$_url/search_like?format=$preferedLanguage$_filters");
 
     Map<String, String> headers = {
       'Accept': 'application/$preferedLanguage',
     };
 
     final res = await client.get(uri, headers: headers);
-    
+
     if (res.statusCode == 200) {
-      return preferedLanguage == "json" ?
-        (jsonDecode(res.body) as List).map((utenteJson) => Like.fromJson(utenteJson)).toList()
-        :
-        XmlDocument.parse(res.body).childElements.first.childElements.map(Like.fromXml).toList();
+      return preferedLanguage == "json"
+          ? (jsonDecode(res.body) as List)
+              .map((utenteJson) => Like.fromJson(utenteJson))
+              .toList()
+          : XmlDocument.parse(res.body)
+              .childElements
+              .first
+              .childElements
+              .map(Like.fromXml)
+              .toList();
     } else {
       throw Exception(res.statusCode);
     }
@@ -226,42 +273,42 @@ class Fortservice {
     };
 
     final res = await client.get(uri, headers: headers);
-    
+
     if (res.statusCode == 200) {
-      return preferedLanguage == "json" ?
-        (jsonDecode(res.body) as List).map((utenteJson) => Like.fromJson(utenteJson)).toList()
-        :
-        XmlDocument.parse(res.body).childElements.first.childElements.map(Like.fromXml).toList();
+      return preferedLanguage == "json"
+          ? (jsonDecode(res.body) as List)
+              .map((utenteJson) => Like.fromJson(utenteJson))
+              .toList()
+          : XmlDocument.parse(res.body)
+              .childElements
+              .first
+              .childElements
+              .map(Like.fromXml)
+              .toList();
     } else {
       throw Exception(res.statusCode);
     }
   }
 
   Future<List<T>> getT<T>(Map<String, String> filters) async {
-    if(T == Utente) {
+    if (T == Utente) {
       return (await getUsers(filters)) as List<T>;
-
-    } else if(T == Post) {
+    } else if (T == Post) {
       return (await getPosts(filters)) as List<T>;
-
-    } else if(T == Like) {
+    } else if (T == Like) {
       return (await getLikes(filters)) as List<T>;
-
     }
 
     return List.empty();
   }
 
   Future<List<T>> getAllT<T>() async {
-    if(T == Utente) {
+    if (T == Utente) {
       return (await getAllUsers()) as List<T>;
-
-    } else if(T == Post) {
+    } else if (T == Post) {
       return (await getAllPosts()) as List<T>;
-
-    } else if(T == Like) {
+    } else if (T == Like) {
       return (await getAllLikes()) as List<T>;
-
     }
 
     return List.empty();
@@ -285,11 +332,12 @@ class Fortservice {
         'password': user['password'],
       });
     } else if (preferedLanguage == "xml") {
-      body = "<user><username>${user['username']}</username><password>${user['password']}</password></user>";
+      body =
+          "<user><username>${user['username']}</username><password>${user['password']}</password></user>";
     }
 
     final res = await client.post(uri, headers: headers, body: body);
-    
+
     if (res.statusCode != 201) {
       throw Exception(res.statusCode);
     }
@@ -304,13 +352,20 @@ class Fortservice {
       'Content-Type': 'application/$preferedLanguage',
     };
 
-    var body = jsonEncode({
-      'title': post['title'],
-      'body': post['body'],
-    });
+    var body = "";
+
+    if (preferedLanguage == "json") {
+      body = jsonEncode({
+        'title': post['title'],
+        'body': post['body'],
+      });
+    } else if (preferedLanguage == "xml") {
+      body =
+          "<post><title>${post['title']}</title><body>${post['body']}</body></post>";
+    }
 
     final res = await client.post(uri, headers: headers, body: body);
-    
+
     if (res.statusCode != 201) {
       throw Exception(res.statusCode);
     }
@@ -326,24 +381,31 @@ class Fortservice {
       'Content-Type': 'application/$preferedLanguage',
     };
 
-    var body = jsonEncode({
-      'id_user': like['id_user'],
-      'id_post': like['id_post'],
-    });
+    var body = "";
+
+    if (preferedLanguage == "json") {
+      body = jsonEncode({
+        'id_user': like['id_user'],
+        'id_post': like['id_post'],
+      });
+    } else if (preferedLanguage == "xml") {
+      body =
+          "<like><id_user>${like['id_user']}</id_user><id_post>${like['id_post']}</id_post></like>";
+    }
 
     final res = await client.put(uri, headers: headers, body: body);
-    
+
     if (res.statusCode != 201) {
       throw Exception(res.statusCode);
     }
   }
 
   Future<void> createT<T>(Map<String, String> obj) async {
-    if(T == Utente) {
+    if (T == Utente) {
       await createUser(obj);
-    } else if(T == Post) {
+    } else if (T == Post) {
       await createPost(obj);
-    } else if(T == Like) {
+    } else if (T == Like) {
       await createLike(obj);
     }
   }
@@ -358,14 +420,21 @@ class Fortservice {
       'Content-Type': 'application/$preferedLanguage',
     };
 
-    var body = jsonEncode({
-      'id': user['id'],
-      'username': user['username'],
-      'password': user['password'],
-    });
+    var body = "";
+
+    if (preferedLanguage == "json") {
+      body = jsonEncode({
+        'id': user['id'],
+        'username': user['username'],
+        'password': user['password'],
+      });
+    } else if (preferedLanguage == "xml") {
+      body =
+          "<user id='${user['id']}'><username>${user['username']}</username><password>${user['password']}</password></user>";
+    }
 
     final res = await client.put(uri, headers: headers, body: body);
-    
+
     if (res.statusCode != 204) {
       throw Exception(res.statusCode);
     }
@@ -381,14 +450,21 @@ class Fortservice {
       'Content-Type': 'application/$preferedLanguage',
     };
 
-    var body = jsonEncode({
-      'id': post['id'],
-      'title': post['title'],
-      'body': post['body'],
-    });
+    var body = "";
+
+    if (preferedLanguage == "json") {
+      body = jsonEncode({
+        'id': post['id'],
+        'title': post['title'],
+        'body': post['body'],
+      });
+    } else if (preferedLanguage == "xml") {
+      body =
+          "<post id='${post['id']}'><title>${post['title']}</title><body>${post['body']}</body></post>";
+    }
 
     final res = await client.put(uri, headers: headers, body: body);
-    
+
     if (res.statusCode != 204) {
       throw Exception(res.statusCode);
     }
@@ -412,12 +488,18 @@ class Fortservice {
       'Content-Type': 'application/$preferedLanguage',
     };
 
-    var body = jsonEncode({
-      'id': id,
-    });
+    var body = "";
+
+    if (preferedLanguage == "json") {
+      body = jsonEncode({
+        'id': id,
+      });
+    } else if (preferedLanguage == "xml") {
+      body = "<user><id>$id</id></user>";
+    }
 
     final res = await client.delete(uri, headers: headers, body: body);
-    
+
     if (res.statusCode != 204) {
       throw Exception(res.statusCode);
     }
@@ -433,12 +515,18 @@ class Fortservice {
       'Content-Type': 'application/$preferedLanguage',
     };
 
-    var body = jsonEncode({
-      'id': id,
-    });
+    var body = "";
+
+    if (preferedLanguage == "json") {
+      body = jsonEncode({
+        'id': id,
+      });
+    } else if (preferedLanguage == "xml") {
+      body = "<post><id>$id</id></post>";
+    }
 
     final res = await client.delete(uri, headers: headers, body: body);
-    
+
     if (res.statusCode != 204) {
       throw Exception(res.statusCode);
     }
@@ -446,7 +534,7 @@ class Fortservice {
 
   Future<void> deleteLike(int firstId, int secondId) async {
     String preferedLanguage = Global().getPreferedLanguage();
-    
+
     final client = http.Client();
     final uri = Uri.parse("$_url/del_like");
 
@@ -454,24 +542,31 @@ class Fortservice {
       'Content-Type': 'application/$preferedLanguage',
     };
 
-    var body = jsonEncode({
-      'id_user': firstId,
-      'id_post': secondId,
-    });
+    var body = "";
+
+    if (preferedLanguage == "json") {
+      body = jsonEncode({
+        'id_user': firstId,
+        'id_post': secondId,
+      });
+    } else if (preferedLanguage == "xml") {
+      body =
+          "<like><id_user>$firstId</id_user><id_post>$secondId</id_post></like>";
+    }
 
     final res = await client.put(uri, headers: headers, body: body);
-    
+
     if (res.statusCode != 204) {
       throw Exception(res.statusCode);
     }
   }
 
   Future<void> deleteT<T>(int id, {int? secondId}) async {
-    if(T == Utente) {
+    if (T == Utente) {
       await deleteUser(id);
-    } else if(T == Post) {
+    } else if (T == Post) {
       await deletePost(id);
-    } else if(T == Like) {
+    } else if (T == Like) {
       await deleteLike(id, secondId!);
     }
   }
