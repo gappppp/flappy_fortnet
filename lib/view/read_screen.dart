@@ -27,7 +27,7 @@ class _ReadScreenState<T extends DeserJson> extends State<ReadScreen<T>> {
 
   List<T>? list;
   bool isLoaded = false;
-  int statusCode = 500;//default saved as generic error
+  int statusCode = 500; //default saved as generic error
 
   @override
   void initState() {
@@ -47,7 +47,6 @@ class _ReadScreenState<T extends DeserJson> extends State<ReadScreen<T>> {
       } else if (T == Like) {
         filters = Like.getFields();
       }
-
     } catch (e) {
       list = [];
       filters = [];
@@ -57,7 +56,6 @@ class _ReadScreenState<T extends DeserJson> extends State<ReadScreen<T>> {
       } catch (e) {
         statusCode = 500;
       }
-
     }
 
     selectedFilter = filters.firstOrNull ?? '';
@@ -78,8 +76,9 @@ class _ReadScreenState<T extends DeserJson> extends State<ReadScreen<T>> {
       appBar: AppBar(title: Text(title)),
       body: isLoaded && list != null
           ? (statusCode == 200 || statusCode == 204)
-            ? buildReady()
-            : ErrorScreen.auto(errorCode: statusCode, header: "Errore $statusCode")
+              ? buildReady()
+              : ErrorScreen.auto(
+                  errorCode: statusCode, header: "Errore $statusCode")
           : buildOnLoading(),
     );
   }
@@ -94,91 +93,120 @@ class _ReadScreenState<T extends DeserJson> extends State<ReadScreen<T>> {
         : "filtri applicati: ${savedFilters.toString()}";
 
     return Container(
-      padding: const EdgeInsets.all(8),
-      child: Column(
-      children: [
-        const Row(
+        padding: const EdgeInsets.all(8),
+        child: Column(
           children: [
-            Text("Scegli che filtro applicare:"),
-          ],
-        ),
+            const Row(
+              children: [
+                Text("Scegli che filtro applicare:"),
+              ],
+            ),
 
-        const SizedBox(width: 8), //
+            const SizedBox(width: 8), //
 
-        Row(
-          children: [
-            Container(
-              //SELECT
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<String>(
-                  value: selectedFilter,
-                  onChanged: (String? newFilter) {
-                    setState(() {
-                      selectedFilter = newFilter!;
-                    });
+            Row(
+              children: [
+                Container(
+                  //SELECT
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      value: selectedFilter,
+                      onChanged: (String? newFilter) {
+                        setState(() {
+                          selectedFilter = newFilter!;
+                        });
+                      },
+                      items:
+                          filters.map<DropdownMenuItem<String>>((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(value),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(width: 8),
+
+                //TEXTFIELD
+                Expanded(
+                  child: TextField(
+                    controller: inputController,
+                    decoration: const InputDecoration(
+                      labelText: 'Inserisci il valore del filtro',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 8),
+
+            Row(
+              children: [
+                ElevatedButton(
+                  //SAVE BTN
+                  onPressed: () async {
+                    if (inputController.text != "") {
+                      if (selectedFilter.startsWith("id") &&
+                          int.tryParse(inputController.text) == null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                                "Prego inserire un valore numerico sui campi ID"),
+                            duration: Duration(seconds: 1),
+                          ),
+                        );
+                      } else {
+                        // if (
+                        //   (selectedFilter.startsWith("id") && int.tryParse(inputController.text) != null) ||
+                        //   !selectedFilter.startsWith("id")
+                        // ) {
+                        savedFilters[selectedFilter] = inputController.text;
+                        inputController.clear();
+                        // Call the async function *before* setState
+                        try {
+                          List<T> newList =
+                              await Fortservice().getT(savedFilters);
+                          statusCode = 200;
+
+                          // trigger reload
+                          setState(() {
+                            list = newList;
+                          });
+                        } catch (e) {
+                          try {
+                            statusCode = int.parse(e.toString());
+                          } catch (e) {
+                            statusCode = 500;
+                          }
+                        }
+                      }
+                    }
                   },
-                  items: filters.map<DropdownMenuItem<String>>((String value) {
-                    return DropdownMenuItem<String>(
-                      value: value,
-                      child: Text(value),
-                    );
-                  }).toList(),
+                  child: const Text('Salva filtro'),
                 ),
-              ),
-            ),
 
-            const SizedBox(width: 8),
+                const SizedBox(width: 8), //space
 
-            //TEXTFIELD
-            Expanded(
-              child: TextField(
-                controller: inputController,
-                decoration: const InputDecoration(
-                  labelText: 'Inserisci il valore del filtro',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-            ),
-          ],
-        ),
-
-        const SizedBox(height: 8),
-
-        Row(
-          children: [
-            ElevatedButton(
-              //SAVE BTN
-              onPressed: () async {
-                if (inputController.text != "") {
-                  if(selectedFilter.startsWith("id") && int.tryParse(inputController.text) == null) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text("Prego inserire un valore numerico sui campi ID"),
-                        duration: Duration(seconds: 1),
-                      ),
-                    );
-
-                  } else {
-                  // if (
-                  //   (selectedFilter.startsWith("id") && int.tryParse(inputController.text) != null) ||
-                  //   !selectedFilter.startsWith("id")
-                  // ) {
-                    savedFilters[selectedFilter] = inputController.text;
-                    inputController.clear();
-
-                    // Call the async function *before* setState
+                ElevatedButton(
+                  //RESET BTN
+                  onPressed: () async {
                     try {
-                      List<T> newList = await Fortservice().getT(savedFilters);
+                      List<T> newList = await Fortservice().getAllT();
                       statusCode = 200;
 
                       // trigger reload
                       setState(() {
                         list = newList;
+                        savedFilters.clear();
                       });
                     } catch (e) {
                       try {
@@ -187,65 +215,36 @@ class _ReadScreenState<T extends DeserJson> extends State<ReadScreen<T>> {
                         statusCode = 500;
                       }
                     }
-                  }
-                }
-              },
-              child: const Text('Salva filtro'),
+                  },
+                  child: const Text('Reset dei filtri'),
+                ),
+              ],
             ),
 
-            const SizedBox(width: 8), //space
+            const SizedBox(height: 8), //space
 
-            ElevatedButton(
-              //RESET BTN
-              onPressed: () async {
-                try {
-                  List<T> newList = await Fortservice().getAllT();
-                  statusCode = 200;
-                  
-                  // trigger reload
-                  setState(() {
-                    list = newList;
-                    savedFilters.clear();
-                  });
-                  
-                } catch (e) {
-                  try {
-                    statusCode = int.parse(e.toString());
-                  } catch (e) {
-                    statusCode = 500;
-                  }
-
-                }
-              },
-              child: const Text('Reset dei filtri'),
+            Row(
+              children: [
+                Text(savedFiltersString),
+              ],
             ),
+
+            const SizedBox(height: 8), //space
+
+            list!.isNotEmpty // TODOHERE
+                ? (list!.length == 1)
+                    ? detailedOne()
+                    : summarizedList()
+                : (savedFilters.isEmpty
+                    ? Text("Nessun $T registrato nel DataBase!")
+                    : Text("Nessun $T trovato con questi criteri di ricerca!"))
           ],
-        ),
-
-        const SizedBox(height: 8), //space
-
-        Row(
-          children: [
-            Text(savedFiltersString),
-          ],
-        ),
-
-        const SizedBox(height: 8), //space
-
-        list!.isNotEmpty// TODOHERE
-            ? (list!.length == 1)
-              ? detailedOne()
-              : summarizedList() 
-            : (savedFilters.isEmpty
-                ? Text("Nessun $T registrato nel DataBase!")
-                : Text("Nessun $T trovato con questi criteri di ricerca!"))
-      ],
-    ));
+        ));
   }
 
   Widget summarizedList() {
     return Expanded(
-      child: ListView.builder(
+        child: ListView.builder(
       //list of Ts
       itemCount: list!.length,
       itemBuilder: (context, index) {
@@ -263,32 +262,29 @@ class _ReadScreenState<T extends DeserJson> extends State<ReadScreen<T>> {
               onPressed: () async {
                 try {
                   Map<String, String> newFilters = (T == Like)
-                    ? <String, String>{
+                      ? <String, String>{
                           "id_user": (element as Like).user.id.toString(),
                           "id_post": (element as Like).post.id.toString(),
-                      }
-                    : <String, String>{
+                        }
+                      : <String, String>{
                           filters[0]: element.toJson()[filters[0]].toString()
-                      };
+                        };
                   List<T> newList = await Fortservice().getT(
-                    //get specified T
-                    newFilters
-                  );
+                      //get specified T
+                      newFilters);
                   statusCode = 200;
-                  
+
                   // trigger reload
                   setState(() {
                     list = newList;
                     savedFilters = Map.from(newFilters);
                   });
-                  
                 } catch (e) {
                   try {
                     statusCode = int.parse(e.toString());
                   } catch (e) {
                     statusCode = 500;
                   }
-
                 }
               },
               child: listTileOf<T>(list![index]),
