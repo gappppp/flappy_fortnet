@@ -730,7 +730,7 @@
     function get_search_like($conn) {
         $res = "ERROR"; // set default result of function to ERROR (= failure)
 
-        $sql = "SELECT utenti.id_user, username, password, post.id_post, title, body FROM utenti LEFT JOIN like_post ON like_post.id_user=utenti.id_user LEFT JOIN post ON post.id_post=like_post.id_post"; // basic query
+        $sql = "SELECT utenti.id_user, username, password, post.id_post, title, body FROM utenti INNER JOIN like_post ON like_post.id_user=utenti.id_user INNER JOIN post ON post.id_post=like_post.id_post"; // basic query
         $filters = []; // additional filters
         $stmt_types = ""; // data types of the filters (see PHP bind_param for more)
 
@@ -962,9 +962,9 @@
 
             $res_query = $stmt->execute();
 
-            return ($res_query) ? "NO CONTENT" : "ERROR";
 
-            return "NO CONTENT";
+
+            return ($res_query && $stmt->affected_rows == 1) ? "NO CONTENT" : "ERROR";
         }
 
         return "BAD REQUEST";
@@ -1024,9 +1024,7 @@
 
             $res_query = $stmt->execute();
 
-            return ($res_query) ? "NO CONTENT" : "ERROR";
-
-            return "NO CONTENT";
+            return ($res_query && $stmt->affected_rows == 1) ? "NO CONTENT" : "ERROR";
         }
 
         return "BAD REQUEST";
@@ -1114,7 +1112,8 @@
 
         $res = $stmt->execute();
 
-        return ($res) ? "NO CONTENT" : "ERROR";
+        return ($res_query && $stmt->affected_rows == 1) ? "NO CONTENT" : "ERROR";
+        
     }
 
     // PATCH ----------------------------------------------
@@ -1187,7 +1186,7 @@
 
             $res = $stmt->execute();
 
-            return ($res) ? "NO CONTENT" : "ERROR";
+            return ($res_query && $stmt->affected_rows == 1) ? "NO CONTENT" : "ERROR";
         }
 
         return "BAD REQUEST"; // bad request
@@ -1225,7 +1224,7 @@
 
             $res = $stmt->execute();
 
-            return ($res) ? "NO CONTENT" : "ERROR";
+            return ($res_query && $stmt->affected_rows == 1) ? "NO CONTENT" : "ERROR";
         }
 
         return "BAD REQUEST"; // bad request
