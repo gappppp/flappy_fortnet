@@ -11,52 +11,82 @@ class AuthScreen extends StatefulWidget {
 
 class _AuthScreenState extends State<AuthScreen> {
   Global globalVars = Global();
-  TextEditingController inputController = TextEditingController();
+  TextEditingController usernameInputController = TextEditingController();
+  TextEditingController passwordInputController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Center(child: Text("Autentificazione")),
-      ),
+      // appBar: AppBar(
+      //   title: const Center(child: Text("Autentificazione")),
+      // ),
       body:
         Column(
           children: [
-            const Text("Inserisci il token di autentificazione per proseguire"),
+            const Text(
+              "Benvenuto su FortNet",
+              textScaler: TextScaler.linear(2),
+              style: TextStyle(
+                fontWeight: FontWeight.bold
+              ),
+            ),
 
-            const SizedBox(width: 8), //
+            const SizedBox(height: 32), //
+            
+
+            const Text(
+              "Autentificazione",
+              textScaler: TextScaler.linear(1.5)
+            ),
+
+            const SizedBox(height: 12), //
+
+            const Text("Inserisci le credenziali per proseguire"),
+
+            const SizedBox(height: 12), //
 
             Row(
               children: [
                 Expanded(child: TextField(
-                  controller: inputController,
+                  controller: usernameInputController,
                   decoration: const InputDecoration(
-                    labelText: "Token d'accesso",
+                    labelText: "Username",
                     border: OutlineInputBorder(),
                   ),
                 )),
 
+                const VerticalDivider(width: 3),//
+
+                Expanded(child: TextField(
+                  controller: passwordInputController,
+                  decoration: const InputDecoration(
+                    labelText: "Password",
+                    border: OutlineInputBorder(),
+                  ),
+                )),
+
+                const VerticalDivider(width: 3),//
+
                 ElevatedButton(//SAVE BTN
                   onPressed: () async {
-                    if (inputController.text != "") {
+                    if (usernameInputController.text != "" && passwordInputController.text != "") {
                       try {
-                        final bool isValidSSO = await Fortservice().isValidSSO(inputController.text);
+                        final String token = await Fortservice().createSSO(
+                          usernameInputController.text, 
+                          passwordInputController.text
+                        );
+                        print("token : $token");
 
-                        if (isValidSSO) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text("Login effettuato con successo!")),
-                          );
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text("Login effettuato con successo!")),
+                        );
 
-                          setState(() {
-                            globalVars.setToken(inputController.text);
-                          });
-                          Navigator.popAndPushNamed(context, "/home");
+                        setState(() {
+                          globalVars.setToken(token);
+                        });
 
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text("Tentativo di login fallito!")),
-                          );
-                        }
+                        Navigator.pushReplacementNamed(context, '/');
+
                       } catch (e) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text(

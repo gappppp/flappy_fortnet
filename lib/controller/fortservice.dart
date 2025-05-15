@@ -21,7 +21,8 @@ class Fortservice {
     final uri = Uri.parse("$_url/users_ids?format=$preferedLanguage");
 
     Map<String, String> headers = {
-      'Accept': 'application/$preferedLanguage',
+      'SSOtoken': Global().getToken(),
+      'Accept': 'application/$preferedLanguage'
     };
 
     final res = await client.get(uri, headers: headers);
@@ -50,6 +51,7 @@ class Fortservice {
     final uri = Uri.parse("$_url/posts_ids?format=$preferedLanguage");
 
     Map<String, String> headers = {
+      'SSOtoken': Global().getToken(),
       'Accept': 'application/$preferedLanguage',
     };
 
@@ -92,6 +94,7 @@ class Fortservice {
         Uri.parse("$_url/search_user?format=$preferedLanguage$_filters");
 
     Map<String, String> headers = {
+      'SSOtoken': Global().getToken(),
       'Accept': 'application/$preferedLanguage',
     };
 
@@ -120,6 +123,7 @@ class Fortservice {
     final uri = Uri.parse("$_url/users?format=$preferedLanguage");
 
     Map<String, String> headers = {
+      'SSOtoken': Global().getToken(),
       'Accept': 'application/$preferedLanguage',
     };
 
@@ -161,6 +165,7 @@ class Fortservice {
         Uri.parse("$_url/search_post?format=$preferedLanguage$_filters");
 
     Map<String, String> headers = {
+      'SSOtoken': Global().getToken(),
       'Accept': 'application/$preferedLanguage',
     };
 
@@ -189,6 +194,7 @@ class Fortservice {
     final uri = Uri.parse("$_url/posts?format=$preferedLanguage");
 
     Map<String, String> headers = {
+      'SSOtoken': Global().getToken(),
       'Accept': 'application/$preferedLanguage',
     };
 
@@ -241,6 +247,7 @@ class Fortservice {
         Uri.parse("$_url/search_like?format=$preferedLanguage$_filters");
 
     Map<String, String> headers = {
+      'SSOtoken': Global().getToken(),
       'Accept': 'application/$preferedLanguage',
     };
 
@@ -269,6 +276,7 @@ class Fortservice {
     final uri = Uri.parse("$_url/likes?format=$preferedLanguage");
 
     Map<String, String> headers = {
+      'SSOtoken': Global().getToken(),
       'Accept': 'application/$preferedLanguage',
     };
 
@@ -321,6 +329,7 @@ class Fortservice {
     final uri = Uri.parse("$_url/user");
 
     var headers = {
+      'SSOtoken': Global().getToken(),
       'Content-Type': 'application/$preferedLanguage',
     };
 
@@ -349,6 +358,7 @@ class Fortservice {
     final uri = Uri.parse("$_url/post");
 
     var headers = {
+      'SSOtoken': Global().getToken(),
       'Content-Type': 'application/$preferedLanguage',
     };
 
@@ -371,6 +381,38 @@ class Fortservice {
     }
   }
 
+  Future<String> createSSO(String username, String password) async {
+    String preferedLanguage = Global().getPreferedLanguage();
+    final client = http.Client();
+    final uri = Uri.parse("$_url/sso");
+
+    var headers = {
+      'Content-Type': 'application/$preferedLanguage'
+    };
+
+    var body = "";
+
+    if (preferedLanguage == "json") {
+      body = jsonEncode({
+        'username': username,
+        'password': password,
+      });
+    } else if (preferedLanguage == "xml") {
+      body =
+        "<user><username>$username</username><password>$password</password></user>";
+    }
+
+    final res = await client.post(uri, headers: headers, body: body);
+print("SSO resbody: ${res.body}");
+    if (res.statusCode == 200) {
+      return (preferedLanguage == "json")
+        ? jsonDecode(res.body)["SSO"]
+        : XmlDocument.parse(res.body).findAllElements("SSO").first.innerText;
+    } else {
+      throw Exception(res.statusCode);
+    }
+  }
+
   Future<void> createLike(Map<String, String> like) async {
     String preferedLanguage = Global().getPreferedLanguage();
 
@@ -378,6 +420,7 @@ class Fortservice {
     final uri = Uri.parse("$_url/add_like");
 
     var headers = {
+      'SSOtoken': Global().getToken(),
       'Content-Type': 'application/$preferedLanguage',
     };
 
@@ -417,6 +460,7 @@ class Fortservice {
     final uri = Uri.parse("$_url/user");
 
     var headers = {
+      'SSOtoken': Global().getToken(),
       'Content-Type': 'application/$preferedLanguage',
     };
 
@@ -447,6 +491,7 @@ class Fortservice {
     final uri = Uri.parse("$_url/post");
 
     var headers = {
+      'SSOtoken': Global().getToken(),
       'Content-Type': 'application/$preferedLanguage',
     };
 
@@ -510,6 +555,7 @@ class Fortservice {
       final uri = Uri.parse("$_url/user");
 
       var headers = {
+        'SSOtoken': Global().getToken(),
         'Content-Type': 'application/$preferedLanguage',
       };
 
@@ -562,6 +608,7 @@ class Fortservice {
       final uri = Uri.parse("$_url/post");
 
       var headers = {
+        'SSOtoken': Global().getToken(),
         'Content-Type': 'application/$preferedLanguage',
       };
 
@@ -597,6 +644,7 @@ class Fortservice {
     final uri = Uri.parse("$_url/user");
 
     var headers = {
+      'SSOtoken': Global().getToken(),
       'Content-Type': 'application/$preferedLanguage',
     };
 
@@ -624,6 +672,7 @@ class Fortservice {
     final uri = Uri.parse("$_url/post");
 
     var headers = {
+      'SSOtoken': Global().getToken(),
       'Content-Type': 'application/$preferedLanguage',
     };
 
@@ -651,6 +700,7 @@ class Fortservice {
     final uri = Uri.parse("$_url/del_like");
 
     var headers = {
+      'SSOtoken': Global().getToken(),
       'Content-Type': 'application/$preferedLanguage',
     };
 
@@ -681,28 +731,5 @@ class Fortservice {
     } else if (T == Like) {
       await deleteLike(id, secondId!);
     }
-  }
-
-  Future<bool> isValidSSO(String sso) async {
-    String preferedLanguage = Global().getPreferedLanguage();
-
-    final client = http.Client();
-    final uri = Uri.parse("$_url/check_sso");
-
-    var headers = {
-      'Content-Type': 'application/$preferedLanguage',
-    };
-
-    var body = "";
-
-    if (preferedLanguage == "json") {
-      body = jsonEncode({"SSO": sso});
-    } else {
-      body = "<auth><SSO>$sso</SSO></auth>";
-    }
-
-    final res = await client.post(uri, headers: headers, body: body);
-
-    return res.statusCode != 204;
   }
 }

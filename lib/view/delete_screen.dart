@@ -21,12 +21,12 @@ class _DeleteScreenState<T extends DeserJson> extends State<DeleteScreen<T>> {
 
   @override
   void initState() {
-    if (!Global().isTokenValid()) {
-      Navigator.popUntil(context, ModalRoute.withName("/"));
-    } else {
+    // if (!Global().isTokenValid()) {
+    //   Navigator.popUntil(context, ModalRoute.withName("/"));
+    // } else {
       super.initState();
       loadT();
-    }
+    // }
     
   }
 

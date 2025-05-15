@@ -20,10 +20,11 @@
         `body` varchar(255) NOT NULL DEFAULT 'Insert body here'
     );
 
-    CREATE TABLE `utenti` (
+    CREATE TABLE `utenti` ( TODO
         `id_user` int(11) NOT NULL,
         `username` varchar(32) NOT NULL,
-        `password` varchar(255) NOT NULL
+        `password` varchar(255) NOT NULL,
+        `token` varchar(255) DEFAULT NULL --token verrà sempre nascosto per ragioni di sicurezza
     );
     */
 
@@ -57,8 +58,6 @@
         - parameters: format('XML'|'JSON')
             id_user(unsigned_int), username(string),
             id_post(unsigned_int), title(string), body(string)
-    
-    - sso (type: READ) --> returns an XML or JSON of the SSO token representation
 
     note: 'format' parameter can assume the 'XML' or 'JSON' value and it indicates whether
         the server response should be an XML or a JSON. if omitted the default is 'XML'.
@@ -71,12 +70,17 @@
     POST METHODS
     - user (type: CREATE) --> create a new user with the body given in the request
     - post (type: CREATE) --> create a new post with the body given in the request
-    - sso (type: CREATE) --> check if the given SSO token in the body is valid
+    - sso (type: CREATE) --> create a SSO token if the given username and password on the body is valid
+        - returns: 
+            - a XML or JSON if query is succesful and has content representing the SSO token,
+            - 'BAD REQUEST' if querystring of the URI is bad formed (e.g.: has wrong/empty parameter)
+            - 'ERROR' if query is unsuccesful or an exception/error occurs during runtime
+            - 'FORBIDDEN' if the username and password are incorrect
 
     note: the body request can be encoded in 'XML' or 'JSON' with the appropriate header ('Content-type')
         that reports it (correspondingly 'application/xml' or 'application/json')
 
-    all POST function returns:
+    all POST function (excepet sso) returns:
     - 'CREATED' if successful
     - 'BAD REQUEST' if body request is bad formed
     - 'ERROR' if query is unsuccesful or an exception/error occurs during runtime
@@ -130,6 +134,9 @@
         - Post: <post id="int"><title>String</title><body>String</body></post>
         - Like: <like><id_user>int</id_user><id_post>String</id_post></like>
         - SSO: <auth><SSO>String</SSO></auth>
+
+    ! IMPORTANT: AUTHORIZATION: every method of the server requires an authorization check
+        of the SSO token (placed in the 'SSOtoken') to be accesed (except from the post_sso)
 
     GENERAL PRINCIPLES
 
@@ -838,30 +845,6 @@
         return $res;
     }
 
-    /**
-     * GET a SSO Token
-     * @param mixed $conn la connessione col database (mysqli)
-     * @return string|SimpleXMLElement Returns a string message ("ERROR", "BAD REQUEST")
-     * or an XML string (SimpleXMLElement) / JSON string representing the SSO token in XML/JSON format
-     * (see function assoc_to_xml_or_json for further detail on succes returns)
-     */
-    function get_sso($conn) {
-        //note: this is an example of pseudo SSO
-        if(!isset($_GET['format']) || $_GET['format'] == "xml" || $_GET['format'] == "json") {
-            $pseudo_key = strval(random_int(PHP_INT_MIN, PHP_INT_MAX));
-            $pseudo_token = password_hash($pseudo_key, PASSWORD_BCRYPT);
-            $arr = ["SSO" => $pseudo_token];
-
-            $res = assoc_to_xml_or_json("sso_to_xml", "sso_to_json", $arr);
-
-            if ($res === FALSE || $res === NULL) $res = "ERROR";
-
-            return $res;
-        } else {
-            return "BAD REQUEST";
-        } 
-    }
-
     // POST --------------------------------------------------
     /**
     * POST/CREATE a user 👌.
@@ -952,27 +935,53 @@
     }
 
     /**
-     * Check a SSO token
+     * Create a SSO token if the given username and password on the body is valid
      * @param mixed $conn la connessione col database (mysqli)
-     * @return string Returns a string message ("BAD REQUEST", "CREATED", "ERROR")
+     * @return string|SimpleXMLElement Returns a string message ("ERROR", "BAD REQUEST", "FORBIDDEN")
+     * or an XML string (SimpleXMLElement) / JSON string representing the SSO token in XML/JSON format
+     * (see function assoc_to_xml_or_json for further detail on succes returns)
      */
-    function post_check_sso($conn) {
-        if(!isset($_GET['format']) || $_GET['format'] == "xml" || $_GET['format'] == "json") {
-            $res = "ERROR";
+    function post_sso($conn) {
+        $sql = "SELECT id_user FROM utenti WHERE username = ? AND password = ?"; // basic query
 
-            $input = file_get_contents('php://input');
+        // get body data
+        $input = file_get_contents('php://input');
 
-            $arr = xml_or_json_to_assoc($input);
+        $arr = xml_or_json_to_assoc($input);
+        
+        if (!isset($arr['username']) && !isset($arr['password'])) return "BAD REQUEST";
 
-            if(!isset($arr["SSO"])) return "BAD REQUEST";
+        $stmt = $conn->prepare($sql); // use statements to avoid injections
+        $stmt->bind_param("ss", $arr['username'], $arr['password']);
 
-            //retrieve SSO logic
-            $pswd = "";
+        $res = $stmt->execute();
+        $stmt->store_result();//save num rows
 
-            return (password_verify($pswd, $arr["SSO"])) || TRUE ? "CREATED" : "ERROR";
-        } else {
-            return "BAD REQUEST";
+        if ($res) {
+            if($stmt->num_rows == 1) {
+                //generate token
+                $key = bin2hex(random_bytes(100));//get random string of 200 chars
+                $token = password_hash($key, PASSWORD_BCRYPT);
+
+                $resBody = (str_contains($_SERVER["CONTENT_TYPE"], "application/xml"))
+                    ? sso_to_xml(["SSO" => $token]) : sso_to_json(["SSO" => $token]);
+
+                if ($resBody === FALSE || $resBody === NULL) return "ERROR";
+
+                $sql = "UPDATE utenti SET token = ? WHERE username = ? AND password = ?";
+                $stmt = $conn->prepare($sql); // use statements to avoid injections
+                $stmt->bind_param("sss", $token, $arr['username'], $arr['password']);
+
+                $res = $stmt->execute();
+                $stmt->store_result();//save num rows
+
+                return $res && $stmt->affected_rows == 1 ? $resBody : "ERROR";
+            }
+
+            return "FORBIDDEN";
         }
+
+        return "ERROR";
     }
 
     // PUT --------------------------------------------------
@@ -1428,6 +1437,25 @@
         return "ERROR"; // error in query
     }
 
+    // AUTHENTICATION ------------------------------------------------
+    /**
+     * check if request is authorized, more likely if request posses a valid SSO token in
+     * the 'SSOtoken' header
+     * 
+     * @param mixed $conn la connessione col database (mysqli)
+     * @return string ("UNAUTHORIZED" | "OK") correspondigly if the authentication failed or succeded 
+     */
+    function check_auth($conn) {
+        $sql = "SELECT id FROM utenti WHERE token = ?";
+        $stmt = $conn->prepare($sql); // use statements to avoid injections
+        $stmt->bind_param("s", $_SERVER['HTTP_SSOTOKEN'] ?? "NONAUTH");
+
+        $res = $stmt->execute();
+        $stmt->store_result();//save num rows
+
+        return $res && $stmt->num_rows == 1 ? "OK" : "UNAUTHORIZED";
+    }
+
     // CORS ------------------------------------------------
     function cors() {
         // Allow from any origin
@@ -1467,14 +1495,23 @@
         // get function name to invoke
         $function = strtolower($_SERVER['REQUEST_METHOD'])."_".ws_operation($_SERVER['REQUEST_URI']);
         
+        if($function != "post_sso") {
+            $res = check_auth($conn);
+            if ($res == "OK" && function_exists($function)) $res = call_user_func($function, $conn);
+        } else {
+            if (function_exists($function)) $res = call_user_func($function, $conn);
+        }
+        
         // invoke requested function if exist
-        if (function_exists($function)) $res = call_user_func($function, $conn);
+        if ($res == "OK" && function_exists($function)) $res = call_user_func($function, $conn);
 
         $conn->close();
 
         if(in_array($_SERVER['REQUEST_METHOD'], ALLOWED_METHODS)) {
             if(!isset($res)) $statuscode = 404; // operation unavailable
             else if($res == "BAD REQUEST") $statuscode = 400; // operation exist but parameters are insufficient
+            else if($res == "UNAUTHORIZED") $statuscode = 401; // operation succesful, request is unauthenticated
+            else if($res == "FORBIDDEN") $statuscode = 403; // operation succesful, request authentication invalid
             else if($res == "NO CONTENT") $statuscode = 204; // operation returned nothing
             else if($res == "CREATED") $statuscode = 201; // operation returned nothing
             else if($res == "ERROR") $statuscode = 500; // general server error

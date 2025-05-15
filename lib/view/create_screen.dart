@@ -27,12 +27,12 @@ class _CreateScreenState<T extends DeserJson> extends State<CreateScreen<T>> {
 
   @override
   void initState() {
-    if (!Global().isTokenValid()) {
-      Navigator.popUntil(context, ModalRoute.withName("/"));
-    } else {
+    // if (!Global().isTokenValid()) {
+    //   Navigator.popUntil(context, ModalRoute.withName("/"));
+    // } else {
       super.initState();
       loadT();
-    }
+    // }
   }
 
   Future<void> loadT() async {

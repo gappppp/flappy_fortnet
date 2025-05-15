@@ -46,6 +46,10 @@ String switchError(int errorCode) {
   switch (errorCode) {
     case 400:
       return "La richiesta è mal strutturata e/o presenta errori";
+    case 401:
+      return "Per usufruire dei servizi di FortNet è necessario autenticarsi";
+    case 403:
+      return "Autentificazione invalida";
     case 404:
       return "L'operazione richiesta non è disponibile";
     case 405:

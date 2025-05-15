@@ -30,7 +30,7 @@ class Global {
     return _token;
   }
 
-  bool isTokenValid() {
+  bool possesToken() {
     //todo
     return _token != "";
   }

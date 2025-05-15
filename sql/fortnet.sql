@@ -1,11 +1,11 @@
 -- phpMyAdmin SQL Dump
--- version 5.2.0
+-- version 5.2.1
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Creato il: Mag 14, 2025 alle 10:02
--- Versione del server: 10.4.27-MariaDB
--- Versione PHP: 8.2.0
+-- Creato il: Mag 16, 2025 alle 00:40
+-- Versione del server: 10.4.32-MariaDB
+-- Versione PHP: 8.2.12
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -40,6 +40,7 @@ INSERT INTO `like_post` (`id_user`, `id_post`) VALUES
 (1, 1),
 (1, 2),
 (1, 10),
+(10, 10),
 (11, 10);
 
 -- --------------------------------------------------------
@@ -60,7 +61,7 @@ CREATE TABLE `post` (
 
 INSERT INTO `post` (`id_post`, `title`, `body`) VALUES
 (1, 'new web', 'service'),
-(2, 'Insert title here', 'Insert body here'),
+(2, 'season 2 cap 3', 'bananita announcement'),
 (10, 'fortnite new network', 'introducing fortnite new network: fortnet!');
 
 -- --------------------------------------------------------
@@ -72,22 +73,21 @@ INSERT INTO `post` (`id_post`, `title`, `body`) VALUES
 CREATE TABLE `utenti` (
   `id_user` int(11) NOT NULL,
   `username` varchar(32) NOT NULL,
-  `password` varchar(255) NOT NULL
+  `password` varchar(255) NOT NULL,
+  `token` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dump dei dati per la tabella `utenti`
 --
 
-INSERT INTO `utenti` (`id_user`, `username`, `password`) VALUES
-(1, 'gappero', 'perogap'),
-(2, 'mongols', 'fire'),
-(10, 'pargo', 'letto'),
-(11, 'mango', 'losco'),
-(13, 'skiski', 'toilet'),
-(14, 'dop dop', 'yes yes'),
-(15, 'crocodillo', 'bombardillo'),
-(16, 'capuccino', 'birikino');
+INSERT INTO `utenti` (`id_user`, `username`, `password`, `token`) VALUES
+(1, 'gappero', 'perogap', '$2y$10$4nsmpAVtwGKy12wPIYZP.uBc7agxo.9Z1q9Gs6K3OdNq6C9NRQGQO'),
+(2, 'mongols', 'fire', NULL),
+(10, 'pargo', 'letto', NULL),
+(11, 'mango', 'losco', NULL),
+(13, 'skiski', 'toilet', NULL),
+(14, 'dop dop', 'yes yes', NULL);
 
 --
 -- Indici per le tabelle scaricate
@@ -121,13 +121,13 @@ ALTER TABLE `utenti`
 -- AUTO_INCREMENT per la tabella `post`
 --
 ALTER TABLE `post`
-  MODIFY `id_post` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
+  MODIFY `id_post` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
 
 --
 -- AUTO_INCREMENT per la tabella `utenti`
 --
 ALTER TABLE `utenti`
-  MODIFY `id_user` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
+  MODIFY `id_user` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
 
 --
 -- Limiti per le tabelle scaricate

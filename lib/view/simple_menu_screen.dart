@@ -35,17 +35,11 @@ class _SimpleMenuScreen extends State<SimpleMenuScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (!Global().isTokenValid()) {
-
-      // Navigator.of(context).pushReplacementNamed("/");//TODO boh
-      while (Navigator.of(context).canPop()) {
-        Navigator.of(context).pop();
-      }
-    }
-    
+    print("simple menu start ok 1");//TODO
     final _currentRoute = ModalRoute.of(context)?.settings.name;
+    print("simple menu start ok 2 | _currentRoute: $_currentRoute");
     final currentRoute = _currentRoute!.endsWith('/') ? _currentRoute : '$_currentRoute/';
-
+print("simple menu start ok 3 | currentRoute: $currentRoute");
     IconData langIcon = globalVars.getPreferedLanguage() == "json" ? Icons.data_object : Icons.code;
     IconData logoutIcon = Icons.logout;
 
@@ -73,7 +67,7 @@ class _SimpleMenuScreen extends State<SimpleMenuScreen> {
             tooltip: "Json/XML",
           ),
 
-          IconButton(
+          if (_currentRoute == "/home") IconButton(
             icon: Icon(logoutIcon),
             onPressed: () {
               logout();
