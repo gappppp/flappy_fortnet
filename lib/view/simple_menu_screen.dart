@@ -19,6 +19,7 @@ class SimpleMenuScreen extends StatefulWidget {
 
 class _SimpleMenuScreen extends State<SimpleMenuScreen> {
   var globalVars = Global();
+  
 
   void changeLanguage() {
     setState(() {
@@ -26,12 +27,27 @@ class _SimpleMenuScreen extends State<SimpleMenuScreen> {
     });
   }
 
+  void logout() {
+    setState(() {
+      globalVars.logout();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (!Global().isTokenValid()) {
+
+      // Navigator.of(context).pushReplacementNamed("/");//TODO boh
+      while (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
+    }
+    
     final _currentRoute = ModalRoute.of(context)?.settings.name;
     final currentRoute = _currentRoute!.endsWith('/') ? _currentRoute : '$_currentRoute/';
 
-    IconData icon = globalVars.getPreferedLanguage() == "json" ? Icons.data_object : Icons.code;
+    IconData langIcon = globalVars.getPreferedLanguage() == "json" ? Icons.data_object : Icons.code;
+    IconData logoutIcon = Icons.logout;
 
     return Scaffold(
       appBar: AppBar(
@@ -44,7 +60,7 @@ class _SimpleMenuScreen extends State<SimpleMenuScreen> {
         // ),
         actions: [
           IconButton(
-            icon: Icon(icon),
+            icon: Icon(langIcon),
             onPressed: () {
               changeLanguage();
               ScaffoldMessenger.of(context).showSnackBar(
@@ -55,6 +71,14 @@ class _SimpleMenuScreen extends State<SimpleMenuScreen> {
               );
             },
             tooltip: "Json/XML",
+          ),
+
+          IconButton(
+            icon: Icon(logoutIcon),
+            onPressed: () {
+              logout();
+            },
+            tooltip: "Logout",
           ),
         ],
       ),

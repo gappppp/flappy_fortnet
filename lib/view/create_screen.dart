@@ -1,6 +1,8 @@
 import 'package:flappy_fortnet/model/deser_json.dart';
+import 'package:flappy_fortnet/model/global.dart';
 import 'package:flappy_fortnet/model/likes.dart';
 import 'package:flappy_fortnet/model/posts.dart';
+import 'package:flappy_fortnet/view/error_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flappy_fortnet/controller/fortservice.dart';
 import 'package:flappy_fortnet/model/utenti.dart';
@@ -25,29 +27,29 @@ class _CreateScreenState<T extends DeserJson> extends State<CreateScreen<T>> {
 
   @override
   void initState() {
-    super.initState();
-    loadT();
+    if (!Global().isTokenValid()) {
+      Navigator.popUntil(context, ModalRoute.withName("/"));
+    } else {
+      super.initState();
+      loadT();
+    }
   }
 
   Future<void> loadT() async {
     if(T == Utente) {
-      title = "Crea Utente";
       fields = Utente.getFields();
       fields.removeAt(0);
       controllers = List.generate(fields.length, (_) => TextEditingController());
     } else if (T == Post) {
-      title = "Crea Post";
       fields = Post.getFields();
       fields.removeAt(0);
-      fields.forEach(print);
       controllers = List.generate(fields.length, (_) => TextEditingController());
     } else if (T == Like) {
-      title = "Crea Like";
       try {
         firstIds = await Fortservice().getUsersIds();
         secondIds = await Fortservice().getPostsIds();
       } catch (e) {
-        print("Error: $e");
+        ErrorScreen(errorCode: 234, header: "Errore nel reperimento dei dati", body: e.toString());
       }
       idsRelationship = [firstIds[0].toString(), secondIds[0].toString()];
     } else {
@@ -155,7 +157,6 @@ class _CreateScreenState<T extends DeserJson> extends State<CreateScreen<T>> {
                             };
                           }
                           
-                          print("DATA BEFORE SEND: $data");
                           Fortservice().createT<T>(data);
 
                           for (var controller in controllers) {
@@ -167,7 +168,9 @@ class _CreateScreenState<T extends DeserJson> extends State<CreateScreen<T>> {
                           );
                         } catch (e) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text("Errore: $e"))
+                            SnackBar(content: Text(
+                              "Errore: ${e == 500 ? "Impossibile creare la risorsa" : e.toString()}"
+                            ))
                           );
                         }
                       },

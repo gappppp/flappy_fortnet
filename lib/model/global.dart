@@ -10,7 +10,9 @@ class Global {
 
   //private fields
   String _preferedLanguage = "json";
+  String _token = "";
 
+  // _preferedLanguage fns
   String getPreferedLanguage() {
     return _preferedLanguage;
   }
@@ -21,5 +23,23 @@ class Global {
     } else {
       _preferedLanguage = "json";
     }
+  }
+
+  //_token fns
+  String getToken() {
+    return _token;
+  }
+
+  bool isTokenValid() {
+    //todo
+    return _token != "";
+  }
+
+  void setToken(String token) {
+    _token = token;
+  }
+
+  void logout() {
+    _token = "";
   }
 }

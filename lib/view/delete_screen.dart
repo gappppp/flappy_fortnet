@@ -1,5 +1,6 @@
 import 'package:flappy_fortnet/controller/fortservice.dart';
 import 'package:flappy_fortnet/model/deser_json.dart';
+import 'package:flappy_fortnet/model/global.dart';
 import 'package:flappy_fortnet/model/likes.dart';
 import 'package:flutter/material.dart';
 
@@ -20,8 +21,13 @@ class _DeleteScreenState<T extends DeserJson> extends State<DeleteScreen<T>> {
 
   @override
   void initState() {
-    super.initState();
-    loadT();
+    if (!Global().isTokenValid()) {
+      Navigator.popUntil(context, ModalRoute.withName("/"));
+    } else {
+      super.initState();
+      loadT();
+    }
+    
   }
 
   Future<void> loadT() async {
@@ -93,7 +99,9 @@ class _DeleteScreenState<T extends DeserJson> extends State<DeleteScreen<T>> {
                               );
                             } catch (e) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text("Errore: $e")),
+                                SnackBar(content: Text(
+                                  "Errore: ${e == 500 ? "Impossibile creare la risorsa" : e.toString()}"
+                                ))
                               );
                             }
                           },

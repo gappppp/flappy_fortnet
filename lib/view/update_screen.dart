@@ -1,5 +1,6 @@
 import 'package:flappy_fortnet/controller/fortservice.dart';
 import 'package:flappy_fortnet/model/deser_json.dart';
+import 'package:flappy_fortnet/model/global.dart';
 import 'package:flappy_fortnet/model/posts.dart';
 import 'package:flappy_fortnet/model/utenti.dart';
 import 'package:flutter/material.dart';
@@ -21,8 +22,13 @@ class _UpdateScreenState<T extends DeserJson> extends State<UpdateScreen<T>> {
 
   @override
   void initState() {
-    super.initState();
-    loadT();
+    if (!Global().isTokenValid()) {
+      Navigator.popUntil(context, ModalRoute.withName("/"));
+    } else {
+      super.initState();
+      loadT();
+    }
+    
   }
 
   Future<void> loadT() async {
@@ -89,29 +95,38 @@ class _UpdateScreenState<T extends DeserJson> extends State<UpdateScreen<T>> {
                       onPressed: () async {
                         try {
                           Map<String, String> data = {};
+                          int fieldAffected = 0;
 
                           for (var i = 0; i < fields.length; i++) {
-                            data[fields[i]] = controllers[i].text;
+                            if (controllers[i].text != "") {
+                              data[fields[i]] = controllers[i].text;
+                              if (i > 0) fieldAffected++;
+                            }
                           }
-
                           // Call the async function *before* setState
-                          await Fortservice().updateT<T>(data);
+                          if(fieldAffected > 0) {
+                            if (fieldAffected == fields.length-1) {
+                              await Fortservice().updateT<T>(data);
+                            } else {
+                              await Fortservice().patchT<T>(data);
+                            }
+                            
+                            // trigger reload
+                            for (var controller in controllers) {
+                              controller.clear();
+                            }
 
-                          // trigger reload
-                          for (var controller in controllers) {
-                            controller.clear();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text("Aggiornamento avvenuto con successo!"),
+                              ),
+                            );
                           }
-
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text("Aggiornamento avvenuto con successo!"),
-                            ),
-                          );
                         } catch (e) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text("Errore: $e"),
-                            ),
+                            SnackBar(content: Text(
+                              "Errore: ${e == 500 ? "Impossibile creare la risorsa" : e.toString()}"
+                            ))
                           );
                         }
                       },
@@ -120,94 +135,6 @@ class _UpdateScreenState<T extends DeserJson> extends State<UpdateScreen<T>> {
                   ),
                 ],
               )
-
-              // Row(
-              //   children: [
-              //     ElevatedButton(//SAVE BTN
-              //       onPressed: () async {
-              //         if (inputController.text != "") {
-              //           savedFilters[selectedFilter] = inputController.text;
-              //           inputController.clear();
-
-              //           // Call the async function *before* setState
-              //           List<T> newList = await Fortservice().getT(savedFilters);
-
-              //           // trigger reload
-              //           setState(() {
-              //             list = newList;
-              //           });
-              //         }
-              //       },
-              //       child: const Text('Salva filtro'),
-              //     ),
-
-              //     const SizedBox(width: 8),//space
-
-              //     ElevatedButton(//RESET BTN
-              //       onPressed: () async {
-              //         List<T> newList = await Fortservice().getAllT();
-
-              //         // trigger reload
-              //         setState(() {
-              //           list = newList;
-              //           savedFilters.clear();
-              //         });
-              //       },
-              //       child: const Text('Reset dei filtri'),
-              //     ),
-              //   ],
-              // ),
-
-              // const SizedBox(height: 8),//space
-
-              // Row(
-              //   children: [
-              //     Text(savedFilters_str),
-              //   ],
-              // ),
-
-              // const SizedBox(height: 8),//space
-              
-              // list!.isNotEmpty ?
-              // Expanded(child: ListView.builder(//list of Ts
-              //   itemCount: list!.length,
-              //   itemBuilder: (context, index) {
-              //     final element = list![index];
-
-              //     return Padding(
-              //       padding: const EdgeInsets.only(bottom: 8),
-              //       child: ElevatedButton(
-              //         style: ElevatedButton.styleFrom(
-              //           padding: EdgeInsets.zero,
-              //           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-              //           elevation: 2,
-              //         ),
-              //         onPressed: () async {
-              //         List<T> newList = await Fortservice().getT(//get specified T
-              //           Map.from(<String, String>{ filters[0]: element.toJson()[filters[0]].toString() })
-              //         );
-                      
-              //         //todo: show specific of T
-
-
-              //         // trigger reload
-              //         setState(() {
-              //           list = newList;
-              //           savedFilters.clear();
-              //         });
-              //       },
-              //         child: listTileOf<T>(list![index]),
-              //       )
-              //     );
-              //   },
-              // ))
-              // :
-              // (
-              //   savedFilters.isEmpty ?
-              //     Text("Nessun $T registrato nel DataBase!")
-              //     :
-              //     Text("Nessun $T trovato con questi criteri di ricerca!")
-              // )
             ],
           )
         )

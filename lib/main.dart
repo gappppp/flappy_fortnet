@@ -1,6 +1,7 @@
 import 'package:flappy_fortnet/model/likes.dart';
 import 'package:flappy_fortnet/model/posts.dart';
 import 'package:flappy_fortnet/model/utenti.dart';
+import 'package:flappy_fortnet/view/auth_screen.dart';
 import 'package:flappy_fortnet/view/create_screen.dart';
 import 'package:flappy_fortnet/view/delete_screen.dart';
 import 'package:flappy_fortnet/view/simple_menu_screen.dart';
@@ -15,9 +16,11 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
+
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
+    
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
@@ -28,14 +31,15 @@ class MyApp extends StatelessWidget {
 
       // initialRoute: '/',
       routes: {
-        '/': (context) => SimpleMenuScreen(
-          title: "Home",
-          menuDesc: "Scegli un opzione",
-          options: Map.from(<String, String>{
-            "users": "Gestisci gli utenti",
-            "posts": "Gestisci i posts",
-            "likes": "Gestisci i likes"
-          })
+        '/': (context) => const AuthScreen(),
+          '/home': (context) => SimpleMenuScreen(
+            title: "Home",
+            menuDesc: "Scegli un opzione",
+            options: Map.from(<String, String>{
+              "users": "Gestisci gli utenti",
+              "posts": "Gestisci i posts",
+              "likes": "Gestisci i likes"
+            })
         ),
           '/users': (context) => SimpleMenuScreen(
               title: "Utenti",

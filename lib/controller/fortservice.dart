@@ -346,7 +346,7 @@ class Fortservice {
   Future<void> createPost(Map<String, String> post) async {
     String preferedLanguage = Global().getPreferedLanguage();
     final client = http.Client();
-    final uri = Uri.parse("$_url/$preferedLanguage");
+    final uri = Uri.parse("$_url/post");
 
     var headers = {
       'Content-Type': 'application/$preferedLanguage',
@@ -478,6 +478,118 @@ class Fortservice {
     }
   }
 
+  Future<void> patchUser(Map<String, String> user) async {//see .php for failure
+    String preferedLanguage = Global().getPreferedLanguage();
+
+    List<String> userFields = Utente.getFields();
+
+    String xmlBody = "<user id='${user['id']}'>";
+    Map<String, String> jsonBodyMap = {'id': user['id'] ?? 'error'};
+
+    userFields.removeAt(0);
+    int userFieldsLength = userFields.length;
+    int fieldAffected = 0;
+
+    user.forEach((key, value) {
+      int index = userFields.indexOf(key);
+
+      if (index > -1) {
+        if (preferedLanguage == "xml") {
+          xmlBody += "<$key>$value</$key>";
+        } else {
+          jsonBodyMap[key] = value;
+        }
+
+        fieldAffected++;
+        userFields.removeAt(index);
+      }
+    });
+
+    if(fieldAffected > 0 && fieldAffected < userFieldsLength) {
+      final client = http.Client();
+      final uri = Uri.parse("$_url/user");
+
+      var headers = {
+        'Content-Type': 'application/$preferedLanguage',
+      };
+
+      String body = "";
+
+      if (preferedLanguage == "json") {
+        body = jsonEncode(jsonBodyMap);//todo
+
+      } else if (preferedLanguage == "xml") {
+        body = "$xmlBody</user>";
+      }
+
+      final res = await client.patch(uri, headers: headers, body: body);
+
+      if (res.statusCode != 204) {
+        throw Exception(res.statusCode);
+      }
+    }
+  }
+
+  Future<void> patchPost(Map<String, String> post) async {
+    String preferedLanguage = Global().getPreferedLanguage();
+
+    List<String> postFields = Post.getFields();
+
+    String xmlBody = "<post id='${post['id']}'>";
+    Map<String, String> jsonBodyMap = {'id': post['id'] ?? 'error'};
+
+    postFields.removeAt(0);
+    int postFieldsLength = postFields.length;
+    int fieldAffected = 0;
+
+    post.forEach((key, value) {
+      int index = postFields.indexOf(key);
+
+      if (index > -1) {
+        if (preferedLanguage == "xml") {
+          xmlBody += "<$key>$value</$key>";
+        } else {
+          jsonBodyMap[key] = value;
+        }
+
+        fieldAffected++;
+        postFields.removeAt(index);
+      }
+    });
+
+    if(fieldAffected > 0 && fieldAffected < postFieldsLength) {
+      final client = http.Client();
+      final uri = Uri.parse("$_url/post");
+
+      var headers = {
+        'Content-Type': 'application/$preferedLanguage',
+      };
+
+      String body = "";
+
+      if (preferedLanguage == "json") {
+        body = jsonEncode(jsonBodyMap);//todo
+
+      } else if (preferedLanguage == "xml") {
+        body = "$xmlBody</post>";
+      }
+
+      final res = await client.patch(uri, headers: headers, body: body);
+
+      if (res.statusCode != 204) {
+        throw Exception(res.statusCode);
+      }
+    }
+  }
+
+  Future<void> patchT<T>(Map<String, String> obj) async {
+    if (T == Utente) {
+      await patchUser(obj);
+    } else if (T == Post) {
+      await patchPost(obj);
+    }
+  }
+
   Future<void> deleteUser(int id) async {
     String preferedLanguage = Global().getPreferedLanguage();
 
@@ -495,7 +607,7 @@ class Fortservice {
         'id': id,
       });
     } else if (preferedLanguage == "xml") {
-      body = "<user><id>$id</id></user>";
+      body = "<user id='$id'></user>";
     }
 
     final res = await client.delete(uri, headers: headers, body: body);
@@ -522,7 +634,7 @@ class Fortservice {
         'id': id,
       });
     } else if (preferedLanguage == "xml") {
-      body = "<post><id>$id</id></post>";
+      body = "<post id='$id'></post>";
     }
 
     final res = await client.delete(uri, headers: headers, body: body);
@@ -569,5 +681,28 @@ class Fortservice {
     } else if (T == Like) {
       await deleteLike(id, secondId!);
     }
+  }
+
+  Future<bool> isValidSSO(String sso) async {
+    String preferedLanguage = Global().getPreferedLanguage();
+
+    final client = http.Client();
+    final uri = Uri.parse("$_url/check_sso");
+
+    var headers = {
+      'Content-Type': 'application/$preferedLanguage',
+    };
+
+    var body = "";
+
+    if (preferedLanguage == "json") {
+      body = jsonEncode({"SSO": sso});
+    } else {
+      body = "<auth><SSO>$sso</SSO></auth>";
+    }
+
+    final res = await client.post(uri, headers: headers, body: body);
+
+    return res.statusCode != 204;
   }
 }

@@ -4,7 +4,7 @@
     const DB_USERNAME = "root";
     const DB_PASSWORD = "";
     const DB_DATABASE = "fortnet";
-    const ALLOWED_METHODS = ["GET", "POST", "PUT", "DELETE", "PATCH"];//TODO expand PATCH method
+    const ALLOWED_METHODS = ["GET", "POST", "PUT", "DELETE", "PATCH"];
 
     // SQL SCHEMA ---------------------------------------------
     /*
@@ -31,7 +31,7 @@
     /*
     request should be formed like this: http://[server_name]/php/fortnet.php/[operation]?[querystring]
     
-        Operation List:
+    Operation List:
     -------------------------------------------------------------------------------------------------
     -------- RESOURCE -------- GET -------- POST -------- PUT -------- PATCH -------- DELETE --------
     -------- Utenti   --------  ✔  --------  ✔  --------  ✔  --------  ✔   --------   ✔    --------
@@ -40,7 +40,6 @@
     -------------------------------------------------------------------------------------------------
 
     WEB API
-    // TODO
     GET METHODS
     - users (type: READ) --> returns an XML or JSON of every user
     - user_search (type: READ) --> returns an XML or JSON of users,
@@ -58,6 +57,8 @@
         - parameters: format('XML'|'JSON')
             id_user(unsigned_int), username(string),
             id_post(unsigned_int), title(string), body(string)
+    
+    - sso (type: READ) --> returns an XML or JSON of the SSO token representation
 
     note: 'format' parameter can assume the 'XML' or 'JSON' value and it indicates whether
         the server response should be an XML or a JSON. if omitted the default is 'XML'.
@@ -70,6 +71,7 @@
     POST METHODS
     - user (type: CREATE) --> create a new user with the body given in the request
     - post (type: CREATE) --> create a new post with the body given in the request
+    - sso (type: CREATE) --> check if the given SSO token in the body is valid
 
     note: the body request can be encoded in 'XML' or 'JSON' with the appropriate header ('Content-type')
         that reports it (correspondingly 'application/xml' or 'application/json')
@@ -94,6 +96,18 @@
     - 'BAD REQUEST' if body request is bad formed
     - 'ERROR' if query is unsuccesful or an exception/error occurs during runtime
 
+    PUT METHOD
+    - user (type: UPDATE) --> partially update a user with the body given in the request
+    - post (type: UPDATE) --> partially update a post with the body given in the request
+
+    note: the body request can be encoded in 'XML' or 'JSON' with the appropriate header ('Content-type')
+        that reports it (correspondingly 'application/xml' or 'application/json')
+
+    all PUT function returns:
+    - 'NO CONTENT' if successful
+    - 'BAD REQUEST' if body request is bad formed
+    - 'ERROR' if query is unsuccesful or an exception/error occurs during runtime
+
     DELETE METHOD
     - user (type: CREATE) --> delete a user with the id given in the querystring
         (parameters: id(unsigned_int))
@@ -104,6 +118,18 @@
     - 'NO CONTENT' if successful
     - 'BAD REQUEST' if body request is bad formed
     - 'ERROR' if query is unsuccesful or an exception/error occurs during runtime
+
+    BODY REQUEST FORMAT:
+    - json:
+        - Utente: { 'id': int, 'username': String, 'password': String }
+        - Post: { 'id': int, 'title': String, 'body': String }
+        - Like: { 'id_user': int, 'id_post': int }
+        - SSO: { 'SSO': String }
+    - xml:
+        - Utente: <user id="int"><username>String</username><password>String</password></user>
+        - Post: <post id="int"><title>String</title><body>String</body></post>
+        - Like: <like><id_user>int</id_user><id_post>String</id_post></like>
+        - SSO: <auth><SSO>String</SSO></auth>
 
     GENERAL PRINCIPLES
 
@@ -357,33 +383,19 @@
         return $res->asXML();
     }
 
-    // /**
-    //  * flatten an associative array (using normal array may cause unexpected behaviour)
-    //  * 
-    //  * @param array $arr the array to flatten
-    //  * 
-    //  * @return array the array flattened
-    //  */
-    // function flatten_assoc(array $arr) {
-    //     $flattened = FALSE;
+    function sso_to_json($arr) {
+        if (!isset($arr["SSO"])) return NULL;
 
-    //     while (!$flattened) {
-    //         foreach ($arr as $key => $value) {
-    //             $temp = $value;
+        return json_encode($arr);
+    }
 
-    //             if(is_array($temp)) {
-    //                 unset($arr[$key]);
-    //                 $arr = array_merge($arr, $temp);
-    //                 $flattened = TRUE; //contrary logic: FALSE because...
-    //                 break;
-    //             }
-    //         }
-            
-    //         $flattened = !$flattened;//...here is reversed
-    //     }
-        
-    //     return $arr;
-    // }
+    function sso_to_xml($arr) {
+        if (!isset($arr["SSO"])) return NULL;
+
+        $res = new SimpleXMLElement("<auth/>");
+        $res->addChild("SSO", $arr["SSO"]);
+        return $res->asXML();
+    }
 
     // GENERAL ---------------------------------------------
     /**
@@ -446,8 +458,17 @@
     function xml_or_json_to_assoc(string $raw_strig) {
         if (str_contains($_SERVER["CONTENT_TYPE"], "application/xml")) {
             $xml = simplexml_load_string($raw_strig);
-            $json = json_encode($xml);
-            return json_decode($json,TRUE);
+            $json = json_decode(json_encode($xml),TRUE);
+            $temp_json = $json;
+
+            foreach ($json as $key => $value) {
+                if ($key == "@attributes") {
+                    foreach ($value as $k => $v) $temp_json[$k] = $v;
+                    unset($temp_json["@attributes"]);
+                }
+            }
+
+            return $temp_json;
         } else if (str_contains($_SERVER["CONTENT_TYPE"], "application/json")) {
             return json_decode($raw_strig,TRUE);
         }
@@ -697,7 +718,6 @@
         if ($res_query) {
             $raw_res = $stmt->get_result();
             $res_arr = $raw_res->fetch_all(MYSQLI_ASSOC);
-                // echo "<pre>".print_r($res_arr, TRUE)."</pre>";
             // turn array to XML or JSON, on format failure report (a general) ERRROR
             $res = assoc_to_xml_or_json("likes_assoc_to_xml", "likes_assoc_to_json", $res_arr);
 
@@ -818,6 +838,30 @@
         return $res;
     }
 
+    /**
+     * GET a SSO Token
+     * @param mixed $conn la connessione col database (mysqli)
+     * @return string|SimpleXMLElement Returns a string message ("ERROR", "BAD REQUEST")
+     * or an XML string (SimpleXMLElement) / JSON string representing the SSO token in XML/JSON format
+     * (see function assoc_to_xml_or_json for further detail on succes returns)
+     */
+    function get_sso($conn) {
+        //note: this is an example of pseudo SSO
+        if(!isset($_GET['format']) || $_GET['format'] == "xml" || $_GET['format'] == "json") {
+            $pseudo_key = strval(random_int(PHP_INT_MIN, PHP_INT_MAX));
+            $pseudo_token = password_hash($pseudo_key, PASSWORD_BCRYPT);
+            $arr = ["SSO" => $pseudo_token];
+
+            $res = assoc_to_xml_or_json("sso_to_xml", "sso_to_json", $arr);
+
+            if ($res === FALSE || $res === NULL) $res = "ERROR";
+
+            return $res;
+        } else {
+            return "BAD REQUEST";
+        } 
+    }
+
     // POST --------------------------------------------------
     /**
     * POST/CREATE a user 👌.
@@ -907,10 +951,34 @@
         return ($res) ? "CREATED" : "ERROR";
     }
 
+    /**
+     * Check a SSO token
+     * @param mixed $conn la connessione col database (mysqli)
+     * @return string Returns a string message ("BAD REQUEST", "CREATED", "ERROR")
+     */
+    function post_check_sso($conn) {
+        if(!isset($_GET['format']) || $_GET['format'] == "xml" || $_GET['format'] == "json") {
+            $res = "ERROR";
+
+            $input = file_get_contents('php://input');
+
+            $arr = xml_or_json_to_assoc($input);
+
+            if(!isset($arr["SSO"])) return "BAD REQUEST";
+
+            //retrieve SSO logic
+            $pswd = "";
+
+            return (password_verify($pswd, $arr["SSO"])) || TRUE ? "CREATED" : "ERROR";
+        } else {
+            return "BAD REQUEST";
+        }
+    }
+
     // PUT --------------------------------------------------
     /**
     * PUT/UPDATE a user 👌.
-    * Updates a user the <code>username</code> or the <code>password</code> or both of them
+    * Updates a user the <code>username</code> and the <code>password</code>
     * and the id of the user is specified in the body of the request
     *
     * How to use this function:
@@ -962,8 +1030,6 @@
 
             $res_query = $stmt->execute();
 
-
-
             return ($res_query && $stmt->affected_rows == 1) ? "NO CONTENT" : "ERROR";
         }
 
@@ -972,7 +1038,7 @@
 
     /**
     * PUT/UPDATE a post 👌.
-    * Updates a post the <code>title</code> or the <code>body</code> or both of them
+    * Updates a post the <code>title</code> and the <code>body</code>
     * and the id of the post is specified in the body of the request
     *
     * How to use this function:
@@ -1112,45 +1178,129 @@
 
         $res = $stmt->execute();
 
-        return ($res_query && $stmt->affected_rows == 1) ? "NO CONTENT" : "ERROR";
+        return ($res && $stmt->affected_rows == 1) ? "NO CONTENT" : "ERROR";
         
     }
 
     // PATCH ----------------------------------------------
     /**
-    * PUT/UPDATE a user 👌.
-    * Updates a user the <code>username</code> or the <code>password</code> or both of them
+    * PATCH/UPDATE a user 👌.
+    * Updates a user the <code>username</code> or the <code>password</code>
     * and the id of the user is specified in the body of the request
     *
     * How to use this function:
     * <code>
-    *   // PUT/UPDATE a user
+    *   // PATCH/UPDATE a user
     *   $conn = new mysqli(DB_HOSTNAME, DB_USERNAME, DB_PASSWORD, DB_DATABASE);
-    *   put_user($conn);
+    *   patch_user($conn);
     * </code>
     * @param mixed $conn la connessione col database (mysqli)
     * @return string Returns a string message ("BAD REQUEST", "NO CONTENT", "ERROR")
     */
     function patch_user($conn) {
-        put_user($conn);
+        $sql = "UPDATE utenti SET "; // basic query
+        $values = [];
+        $stmt_types = "";
+
+        // get body data
+        $input = file_get_contents('php://input');
+
+        $arr = xml_or_json_to_assoc($input);
+
+        // username to update a user
+        if (isset($arr['username'])) {
+            // urldecode avoids error if using wildcards
+            $values["username=?"] = strval(urldecode($arr['username']));
+            $stmt_types .= "s";
+        }
+
+        // password to update a user
+        if (isset($arr['password'])) {
+            // urldecode avoids error if using wildcards
+            $values["password=?"] = strval(urldecode($arr['password']));
+            $stmt_types .= "s";
+        }
+
+        // need id to update a user
+        if (isset($arr['id']) && is_numeric($arr['id']) && count($values) == 1) {
+            // urldecode avoids error if using wildcards
+            $id = strval(urldecode($arr['id']));
+
+            $sql .= implode(', ', array_keys($values))." WHERE id_user=?";
+
+            $stmt = $conn->prepare($sql); // use statements to avoid injections
+
+            $values[] = $id;
+
+            // splat operator (...) work like this: e.g.: ...[1, 5, 7, 9] == turned into ==> 1, 5, 7, 9
+            $stmt->bind_param($stmt_types."i", ...array_values($values));
+
+            $res_query = $stmt->execute();
+
+            return ($res_query && $stmt->affected_rows == 1) ? "NO CONTENT" : "ERROR";
+        }
+
+        return "BAD REQUEST";
     }
 
     /**
-    * PUT/UPDATE a post 👌.
-    * Updates a post the <code>title</code> or the <code>body</code> or both of them
+    * PATCH/UPDATE a post 👌.
+    * Updates a post the <code>title</code> or the <code>body</code>
     * and the id of the post is specified in the body of the request
     *
     * How to use this function:
     * <code>
-    *   // PUT/UPDATE a post
+    *   // PATCH/UPDATE a post
     *   $conn = new mysqli(DB_HOSTNAME, DB_USERNAME, DB_PASSWORD, DB_DATABASE);
-    *   put_post($conn);
+    *   patch_post($conn);
     * </code>
     * @param mixed $conn la connessione col database (mysqli)
     * @return string Returns a string message ("BAD REQUEST", "NO CONTENT", "ERROR")
     */
     function patch_post($conn) {
-        put_post($conn);
+        $sql = "UPDATE post SET "; // basic query
+        $values = [];
+        $stmt_types = "";
+
+        // get body data
+        $input = file_get_contents('php://input');
+
+        $arr = xml_or_json_to_assoc($input);
+
+        // title to update a post
+        if (isset($arr['title'])) {
+            // urldecode avoids error if using wildcards
+            $values["title=?"] = strval(urldecode($arr['title']));
+            $stmt_types .= "s";
+        }
+
+        // body to update a post
+        if (isset($arr['body'])) {
+            // urldecode avoids error if using wildcards
+            $values["body=?"] = strval(urldecode($arr['body']));
+            $stmt_types .= "s";
+        }
+
+        // need id to update a post
+        if (isset($arr['id']) && is_numeric($arr['id']) && count($values) == 1) {
+            // urldecode avoids error if using wildcards
+            $id = strval(urldecode($arr['id']));
+
+            $sql .= implode(', ', array_keys($values))." WHERE id_post=?";
+
+            $stmt = $conn->prepare($sql); // use statements to avoid injections
+
+            $values[] = $id;
+
+            // splat operator (...) work like this: e.g.: ...[1, 5, 7, 9] == turned into ==> 1, 5, 7, 9
+            $stmt->bind_param($stmt_types."i", ...array_values($values));
+
+            $res_query = $stmt->execute();
+
+            return ($res_query && $stmt->affected_rows == 1) ? "NO CONTENT" : "ERROR";
+        }
+
+        return "BAD REQUEST";
     }
 
     // DELETE ----------------------------------------------
@@ -1186,7 +1336,7 @@
 
             $res = $stmt->execute();
 
-            return ($res_query && $stmt->affected_rows == 1) ? "NO CONTENT" : "ERROR";
+            return ($res && $stmt->affected_rows == 1) ? "NO CONTENT" : "ERROR";
         }
 
         return "BAD REQUEST"; // bad request
@@ -1224,7 +1374,7 @@
 
             $res = $stmt->execute();
 
-            return ($res_query && $stmt->affected_rows == 1) ? "NO CONTENT" : "ERROR";
+            return ($res && $stmt->affected_rows == 1) ? "NO CONTENT" : "ERROR";
         }
 
         return "BAD REQUEST"; // bad request
