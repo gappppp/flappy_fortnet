@@ -1,5 +1,4 @@
 import 'package:flappy_fortnet/model/deser_json.dart';
-import 'package:flappy_fortnet/model/global.dart';
 import 'package:flappy_fortnet/model/likes.dart';
 import 'package:flappy_fortnet/model/posts.dart';
 import 'package:flappy_fortnet/view/error_screen.dart';

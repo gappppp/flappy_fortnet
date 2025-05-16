@@ -1,6 +1,5 @@
 import 'package:flappy_fortnet/controller/fortservice.dart';
 import 'package:flappy_fortnet/model/deser_json.dart';
-import 'package:flappy_fortnet/model/global.dart';
 import 'package:flappy_fortnet/model/likes.dart';
 import 'package:flutter/material.dart';
 

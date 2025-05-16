@@ -1,6 +1,7 @@
 import 'package:flappy_fortnet/model/global.dart';
 import 'package:flappy_fortnet/model/likes.dart';
 import 'package:flappy_fortnet/model/posts.dart';
+import 'package:flappy_fortnet/model/route_tracker.dart';
 import 'package:flappy_fortnet/model/utenti.dart';
 import 'package:flappy_fortnet/view/auth_screen.dart';
 import 'package:flappy_fortnet/view/create_screen.dart';
@@ -18,7 +19,7 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  static Map<String, WidgetBuilder> protectedRoutes = {
+  static final Map<String, WidgetBuilder> protectedRoutes = {
     '/': (context) => SimpleMenuScreen(
       title: "Home",
       menuDesc: "Scegli un opzione",
@@ -73,8 +74,7 @@ class MyApp extends StatelessWidget {
 
   // This widget is the root of your application.
   @override
-  Widget build(BuildContext context) {
-    
+  Widget build(BuildContext context) {    
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
@@ -88,13 +88,18 @@ class MyApp extends StatelessWidget {
         '/auth': (context) => const AuthScreen(),
       },
 
-      onGenerateRoute: (settings) {//when new route request TODO
-      print("on generate route | setting name: ${settings.name} | founded ? ${protectedRoutes[settings.name] != null}");
+      navigatorObservers: [RouteTracker()],
+
+      onGenerateRoute: (settings) {//when new route request
         //return to /auth if not authorized
-        if (settings.name != '/auth' && !Global().possesToken()) {
-          return MaterialPageRoute(builder: (_) => const AuthScreen());
+        if (!Global().possesToken()) {
+          return MaterialPageRoute(
+            settings: RouteSettings(name: settings.name),//set name otherwise it remains the prev route name
+            builder: (_) => const AuthScreen()
+          );
         } else {
           return MaterialPageRoute(
+            settings: RouteSettings(name: settings.name),//set name otherwise it remains the prev route name
             builder:
               protectedRoutes[settings.name]
               ?? (_) => const ErrorScreen(

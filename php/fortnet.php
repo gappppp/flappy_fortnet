@@ -20,7 +20,7 @@
         `body` varchar(255) NOT NULL DEFAULT 'Insert body here'
     );
 
-    CREATE TABLE `utenti` ( TODO
+    CREATE TABLE `utenti` (
         `id_user` int(11) NOT NULL,
         `username` varchar(32) NOT NULL,
         `password` varchar(255) NOT NULL,
@@ -129,11 +129,13 @@
         - Post: { 'id': int, 'title': String, 'body': String }
         - Like: { 'id_user': int, 'id_post': int }
         - SSO: { 'SSO': String }
+        - auth: { 'username': String, 'password': String } //note: used in post_sso to authenticate
     - xml:
         - Utente: <user id="int"><username>String</username><password>String</password></user>
         - Post: <post id="int"><title>String</title><body>String</body></post>
         - Like: <like><id_user>int</id_user><id_post>String</id_post></like>
         - SSO: <auth><SSO>String</SSO></auth>
+        - auth: <auth><username>String</username><password>String</password></auth>
 
     ! IMPORTANT: AUTHORIZATION: every method of the server requires an authorization check
         of the SSO token (placed in the 'SSOtoken') to be accesed (except from the post_sso)
@@ -1446,10 +1448,13 @@
      * @return string ("UNAUTHORIZED" | "OK") correspondigly if the authentication failed or succeded 
      */
     function check_auth($conn) {
-        $sql = "SELECT id FROM utenti WHERE token = ?";
+        $sql = "SELECT id_user FROM utenti WHERE token IS NOT NULL && token = ?";
         $stmt = $conn->prepare($sql); // use statements to avoid injections
-        $stmt->bind_param("s", $_SERVER['HTTP_SSOTOKEN'] ?? "NONAUTH");
 
+        $ssoToken = $_SERVER["HTTP_SSOTOKEN"] ?? "NONAUTH";//get 'SSOtoken' header
+        if($ssoToken == "NONAUTH") return "UNAUTHORIZED";
+
+        $stmt->bind_param("s", $ssoToken);
         $res = $stmt->execute();
         $stmt->store_result();//save num rows
 
@@ -1498,12 +1503,10 @@
         if($function != "post_sso") {
             $res = check_auth($conn);
             if ($res == "OK" && function_exists($function)) $res = call_user_func($function, $conn);
+
         } else {
             if (function_exists($function)) $res = call_user_func($function, $conn);
         }
-        
-        // invoke requested function if exist
-        if ($res == "OK" && function_exists($function)) $res = call_user_func($function, $conn);
 
         $conn->close();
 

@@ -18,7 +18,13 @@ class _AuthScreenState extends State<AuthScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       // appBar: AppBar(
-      //   title: const Center(child: Text("Autentificazione")),
+      //   title: const Center(child: Text(
+      //     "Benvenuto su FortNet",
+      //     style: TextStyle(
+      //       fontWeight: FontWeight.bold
+      //     ),
+      //   )),
+      //   leading: const SizedBox.shrink(), //don't show backbutton
       // ),
       body:
         Column(
@@ -75,7 +81,6 @@ class _AuthScreenState extends State<AuthScreen> {
                           usernameInputController.text, 
                           passwordInputController.text
                         );
-                        print("token : $token");
 
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(content: Text("Login effettuato con successo!")),

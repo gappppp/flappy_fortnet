@@ -1,4 +1,5 @@
 import 'package:flappy_fortnet/model/global.dart';
+import 'package:flappy_fortnet/model/route_tracker.dart';
 import 'package:flutter/material.dart';
 
 class SimpleMenuScreen extends StatefulWidget {
@@ -31,27 +32,24 @@ class _SimpleMenuScreen extends State<SimpleMenuScreen> {
     setState(() {
       globalVars.logout();
     });
+    // Navigator.pop(context);
+    Navigator.pushReplacementNamed(context, RouteTracker().getCurrentRoute());
   }
 
   @override
   Widget build(BuildContext context) {
-    print("simple menu start ok 1");//TODO
-    final _currentRoute = ModalRoute.of(context)?.settings.name;
-    print("simple menu start ok 2 | _currentRoute: $_currentRoute");
-    final currentRoute = _currentRoute!.endsWith('/') ? _currentRoute : '$_currentRoute/';
-print("simple menu start ok 3 | currentRoute: $currentRoute");
+    // final _currentRoute = ModalRoute.of(context)?.settings.name;
+    final String _currentRoute = RouteTracker().getCurrentRoute();
+    final currentRoute = _currentRoute.endsWith('/') ? _currentRoute : '$_currentRoute/';
+    
     IconData langIcon = globalVars.getPreferedLanguage() == "json" ? Icons.data_object : Icons.code;
     IconData logoutIcon = Icons.logout;
 
     return Scaffold(
       appBar: AppBar(
-        title: Center(child: Text(widget.title)),
-        // leading: IconButton (
-        //   icon: Icon(Icons.arrow_back), 
-        //   onPressed: () { 
-        //     /** Do something */ 
-        //   },
-        // ),
+        title: Center(child: Text((_currentRoute == "/" ? "FortNet " : "") + widget.title)),
+        //hide if route is "/" the back button
+        leading: (_currentRoute == "/") ? const SizedBox.shrink() : const BackButton(),
         actions: [
           IconButton(
             icon: Icon(langIcon),
@@ -67,7 +65,7 @@ print("simple menu start ok 3 | currentRoute: $currentRoute");
             tooltip: "Json/XML",
           ),
 
-          if (_currentRoute == "/home") IconButton(
+          if (_currentRoute == "/") IconButton(
             icon: Icon(logoutIcon),
             onPressed: () {
               logout();

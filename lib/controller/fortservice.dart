@@ -399,11 +399,10 @@ class Fortservice {
       });
     } else if (preferedLanguage == "xml") {
       body =
-        "<user><username>$username</username><password>$password</password></user>";
+        "<auth><username>$username</username><password>$password</password></auth>";
     }
 
     final res = await client.post(uri, headers: headers, body: body);
-print("SSO resbody: ${res.body}");
     if (res.statusCode == 200) {
       return (preferedLanguage == "json")
         ? jsonDecode(res.body)["SSO"]
